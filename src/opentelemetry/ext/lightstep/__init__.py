@@ -21,7 +21,7 @@ class LightStepSpanExporter(SpanExporter):
         self,
         name,
         token,
-        host="collector.lightstep.com",
+        host="ingest.lightstep.com",
         port=443,
         encryption="tls",
         verbosity=0,
