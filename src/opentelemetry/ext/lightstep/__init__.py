@@ -20,7 +20,7 @@ class LightStepSpanExporter(SpanExporter):
     def __init__(
         self,
         name,
-        token,
+        token="",
         host="collector.lightstep.com",
         port=443,
         encryption="tls",
