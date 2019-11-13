@@ -21,7 +21,7 @@ class LightStepSpanExporter(SpanExporter):
         self,
         name,
         token="",
-        host="collector.lightstep.com",
+        host="ingest.lightstep.com",
         port=443,
         encryption="tls",
         verbosity=0,
@@ -41,14 +41,14 @@ class LightStepSpanExporter(SpanExporter):
                 trace_id=0xFFFFFFFFFFFFFFFF & span.context.trace_id,
                 span_id=0xFFFFFFFFFFFFFFFF & span.context.span_id,
             )
-            lsSpan = BasicSpan(
+            lightstep_span = BasicSpan(
                 self.tracer,
                 operation_name=span.name,
                 context=ctx,
                 start_time=_nsec_to_sec(span.start_time),
                 tags=span.attributes,
             )
-            lsSpan.finish(finish_time=_nsec_to_sec(span.end_time))
+            lightstep_span.finish(finish_time=_nsec_to_sec(span.end_time))
         self.tracer.flush()
 
     def shutdown(self) -> None:
