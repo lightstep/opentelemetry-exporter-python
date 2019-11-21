@@ -12,7 +12,7 @@ tracer = trace.tracer()
 # configure the LightStepSpanExporter as our exporter
 exporter = LightStepSpanExporter(
     name="test-service",
-    token=os.getenv("LIGHTSTEP_TOKEN"),
+    token=os.getenv("LIGHTSTEP_TOKEN", ""),
     host="localhost",
     port=8360,
     encryption="none",
