@@ -33,6 +33,8 @@ class LightStepSpanExporter(SpanExporter):
             collector_port=port,
             collector_encryption=encryption,
             verbosity=verbosity,
+            use_http=False,
+            use_thrift=True,
         )
 
     def export(self, spans: typing.Sequence[Span]) -> "SpanExportResult":
