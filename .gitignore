@@ -1,0 +1,5 @@
+**/build/*
+**/dist/*
+**/.vscode/*
+**/opentelemetry_ext_lightstep.egg-info/*
+.coverage
