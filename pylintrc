@@ -25,7 +25,7 @@ load-plugins=
 # instead.
 include-ids=no
 
-# Deprecated. It was used to include symbolic ids of messages in output. Use
+# Deprecated. It was used to include symbolic ids of messages in the output. Use
 # --msg-template instead.
 symbols=no
 
