@@ -130,7 +130,7 @@ function-rgx=[a-z_][a-z0-9_]{2,30}$
 # Naming hint for function names
 function-name-hint=[a-z_][a-z0-9_]{2,30}$
 
-# Regular expression matching correct variable names
+# Regular expression that matches correct variable names.
 variable-rgx=[a-z_][a-z0-9_]{2,30}$
 
 # Naming hint for variable names
