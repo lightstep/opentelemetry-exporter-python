@@ -75,7 +75,7 @@ disable=protected-access,too-many-instance-attributes,too-few-public-methods,too
 [REPORTS]
 
 # Set the output format. Available formats are text, parseable, colorized, msvs
-# (visual studio) and html. You can also give a reporter class, eg
+# (visual studio) and HTML. You can also give a reporter class, e.g.
 # mypackage.mymodule.MyReporterClass.
 output-format=text
 
