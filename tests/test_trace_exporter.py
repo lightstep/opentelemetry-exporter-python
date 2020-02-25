@@ -62,12 +62,9 @@ class TestLightStepSpanExporter(unittest.TestCase):
     @patch("lightstep.Tracer", MockTracer)
     def test_export(self):
         # pylint: disable=invalid-name
-        self.maxDiff = None
 
         span_names = ("test1", "test2", "test3")
         trace_id = 0x6E0C63257DE34C926F9EFCD03927272E
-        trace_id_high = 0x6E0C63257DE34C92
-        trace_id_low = 0x6F9EFCD03927272E
         span_id = 0x34BF92DEEFC58C92
         parent_id = 0x1111111111111111
         other_id = 0x2222222222222222

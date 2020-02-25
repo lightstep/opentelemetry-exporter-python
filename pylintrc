@@ -278,7 +278,7 @@ ignore-mixin-members=yes
 # and thus existing member attributes cannot be deduced by static analysis
 ignored-modules=
 
-# List of classes names for which member attributes should not be checked
+# List of class names for which member attributes should not be checked
 # (useful for classes with attributes dynamically set).
 ignored-classes=SQLObject
 
