@@ -21,7 +21,7 @@ persistent=yes
 # usually to register additional checkers.
 load-plugins=
 
-# Deprecated. It was used to include message's id in output. Use --msg-template
+# Deprecated. It was used to include the message's id in the output. Use --msg-template
 # instead.
 include-ids=no
 
