@@ -2,11 +2,11 @@ import unittest
 
 from unittest.mock import patch
 
-
 from opentelemetry import trace as trace_api
 from opentelemetry.sdk import trace
 from opentelemetry.ext.lightstep import LightStepSpanExporter
 from opentelemetry.sdk.trace.export import SpanExportResult
+from opentelemetry.trace.status import Status, StatusCanonicalCode
 
 
 class MockTracer:
@@ -40,6 +40,7 @@ class MockTracer:
         pass
 
 
+# TODO: add tests for tags/attributes and span hierarchy
 class TestLightStepSpanExporter(unittest.TestCase):
     @patch("lightstep.Tracer", MockTracer)
     def test_constructor_default(self):
@@ -114,7 +115,34 @@ class TestLightStepSpanExporter(unittest.TestCase):
             trace.Span(name=span_names[2], context=other_context, parent=None),
         ]
 
+        otel_spans[0].start(start_time=start_times[0])
+        # added here to preserve order
+        otel_spans[0].set_attribute("key_bool", False)
+        otel_spans[0].set_attribute("key_string", "hello_world")
+        otel_spans[0].set_attribute("key_float", 111.22)
+        otel_spans[0].set_status(
+            Status(StatusCanonicalCode.UNKNOWN, "Example description")
+        )
+        otel_spans[0].end(end_time=end_times[0])
+
+        otel_spans[1].start(start_time=start_times[1])
+        otel_spans[1].end(end_time=end_times[1])
+
+        otel_spans[2].start(start_time=start_times[2])
+        otel_spans[2].end(end_time=end_times[2])
+
         exporter = LightStepSpanExporter("my-service-name")
         self.assertEqual(exporter.export(otel_spans), SpanExportResult.SUCCESS)
         self.assertEqual(len(exporter.tracer.spans), len(otel_spans))
-        # TODO: add tests for tags/attributes and span hierarchy
+        for index, _ in enumerate(span_names):
+            self.assertEqual(
+                exporter.tracer.spans[index].operation_name, span_names[index]
+            )
+            print(start_times[index], end_times[index], durations[index])
+            self.assertEqual(
+                exporter.tracer.spans[index].start_time, start_times[index] / 1000000000
+            )
+            self.assertEqual(
+                round(exporter.tracer.spans[index].duration, 2),
+                durations[index] / 1000000000,
+            )

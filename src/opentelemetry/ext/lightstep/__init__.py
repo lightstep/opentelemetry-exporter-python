@@ -1,16 +1,15 @@
 import typing
 import lightstep
 
-from opentelemetry.trace import SpanContext
 from basictracer.span import BasicSpan
 from opentelemetry.sdk.trace.export import Span, SpanExporter, SpanExportResult
+from opentelemetry.trace import SpanContext
 
 
-def _nsec_to_sec(nsec):
+def _nsec_to_sec(nsec=0):
     """Convert nanoseconds to seconds float"""
-    if nsec:
-        return nsec / 1000000000
-    return 0
+    nsec = nsec or 0
+    return nsec / 1000000000
 
 
 class LightStepSpanExporter(SpanExporter):
