@@ -58,7 +58,7 @@ confidence=
 
 # Enable the message, report, category or checker with the given id(s). You can
 # either give multiple identifiers separated by comma (,) or put this option
-# multiple time. See also the "--disable" option for examples.
+# multiple times. See also the "--disable" option for examples.
 #enable=
 
 # Disable the message, report, category or checker with the given id(s). You
@@ -81,53 +81,53 @@ output-format=text
 
 # Put messages in a separate file for each module / package specified on the
 # command line instead of printing them on stdout. Reports (if any) will be
-# written in a file name "pylint_global.[txt|html]".
+# written in a file named "pylint_global.[txt|html]".
 files-output=no
 
-# Tells whether to display a full report or only the messages
+# Tells whether to display a full report or only the messages.
 reports=yes
 
-# Python expression which should return a note less than 10 (10 is the highest
+# Python expression which should return a grade less than 10 (10 is the highest
 # note). You have access to the variables errors warning, statement which
 # respectively contain the number of errors / warnings messages and the total
 # number of statements analyzed. This is used by the global evaluation report
 # (RP0004).
 evaluation=10.0 - ((float(5 * error + warning + refactor + convention) / statement) * 10)
 
-# Add a comment according to your evaluation note. This is used by the global
+# Add a comment according to your evaluation grade. This is used by the global
 # evaluation report (RP0004).
 comment=no
 
 # Template used to display messages. This is a python new-style format string
-# used to format the message information. See doc for all details
+# used to format the message information. See the doc for all the details.
 #msg-template=
 
 
 [BASIC]
 
-# Required attributes for module, separated by a comma
+# Required attributes for module, separated by a comma.
 required-attributes=
 
-# List of builtins function names that should not be used, separated by a comma
+# List of builtin function names that should not be used, separated by a comma.
 bad-functions=map,filter,input
 
-# Good variable names which should always be accepted, separated by a comma
+# Variable names which should always be accepted, separated by a comma.
 good-names=i,j,k,ex,Run,_
 
-# Bad variable names which should always be refused, separated by a comma
+# Variable names which should always be refused, separated by a comma.
 bad-names=foo,bar,baz,toto,tutu,tata
 
 # Colon-delimited sets of names that determine each other's naming style when
 # the name regexes allow several styles.
 name-group=
 
-# Include a hint for the correct naming format with invalid-name
+# Include a hint for the correct naming format with invalid-name.
 include-naming-hint=no
 
-# Regular expression matching correct function names
+# Regular expression that matches correct function names.
 function-rgx=[a-z_][a-z0-9_]{2,30}$
 
-# Naming hint for function names
+# Naming hint for function names.
 function-name-hint=[a-z_][a-z0-9_]{2,30}$
 
 # Regular expression that matches correct variable names.
@@ -294,10 +294,10 @@ generated-members=REQUEST,acl_users,aq_parent
 
 [VARIABLES]
 
-# Tells whether we should check for unused import in __init__ files.
+# Defines whether we should check for unused imports in __init__ files.
 init-import=no
 
-# A regular expression matching the name of dummy variables (i.e. expectedly
+# A regular expression that matches the name of dummy variables (i.e. expectedly
 # not used).
 dummy-variables-rgx=_$|dummy
 
@@ -313,7 +313,7 @@ callbacks=cb_,_cb
 [CLASSES]
 
 # List of interface methods to ignore, separated by a comma. This is used for
-# instance to not check methods defines in Zope's Interface base class.
+# instance to not check methods defined in Zope's Interface base class.
 ignore-iface-methods=isImplementedBy,deferred,extends,names,namesAndDescriptions,queryDescriptionFor,getBases,getDescriptionFor,getDoc,getName,getTaggedValue,getTaggedValueTags,isEqualOrExtendedBy,setTaggedValue,isImplementedByInstancesOf,adaptWith,is_implemented_by
 
 # List of method names used to declare (i.e. assign) instance attributes.
@@ -332,23 +332,23 @@ exclude-protected=_asdict,_fields,_replace,_source,_make
 
 [DESIGN]
 
-# Maximum number of arguments for function / method
+# Maximum number of arguments for function / method.
 max-args=5
 
-# Argument names that match this expression will be ignored. Default to name
-# with leading underscore
+# Argument names that match this expression will be ignored. Defaults to name
+# with leading underscore.
 ignored-argument-names=_.*
 
-# Maximum number of locals for function / method body
+# Maximum number of locals for function / method body.
 max-locals=15
 
-# Maximum number of return / yield for function / method body
+# Maximum number of return / yield for function / method body.
 max-returns=6
 
-# Maximum number of branch for function / method body
+# Maximum number of branch for function / method body.
 max-branches=12
 
-# Maximum number of statements in function / method body
+# Maximum number of statements in function / method body.
 max-statements=50
 
 # Maximum number of parents for a class (see R0901).
@@ -366,11 +366,11 @@ max-public-methods=20
 
 [IMPORTS]
 
-# Deprecated modules which should not be used, separated by a comma
+# Deprecated modules which should not be used, separated by a comma.
 deprecated-modules=regsub,TERMIOS,Bastion,rexec
 
 # Create a graph of every (i.e. internal and external) dependencies in the
-# given file (report RP0402 must not be disabled)
+# given file (report RP0402 must not be disabled).
 import-graph=
 
 # Create a graph of external dependencies in the given file (report RP0402 must
@@ -378,12 +378,12 @@ import-graph=
 ext-import-graph=
 
 # Create a graph of internal dependencies in the given file (report RP0402 must
-# not be disabled)
+# not be disabled).
 int-import-graph=
 
 
 [EXCEPTIONS]
 
 # Exceptions that will emit a warning when being caught. Defaults to
-# "Exception"
+# "Exception".
 overgeneral-exceptions=Exception
