@@ -2,28 +2,23 @@
 import os
 
 from opentelemetry import trace
-from opentelemetry.context import Context
-from opentelemetry.sdk.trace import Tracer
+from opentelemetry.sdk.trace import TracerSource
 from opentelemetry.sdk.trace.export import BatchExportSpanProcessor
 from opentelemetry.ext.lightstep import LightStepSpanExporter
 
-trace.set_preferred_tracer_implementation(lambda T: Tracer())
-tracer = trace.tracer()
+trace.set_preferred_tracer_source_implementation(lambda T: TracerSource())
 # configure the LightStepSpanExporter as our exporter
 exporter = LightStepSpanExporter(
-    name="test-service",
-    token=os.getenv("LIGHTSTEP_TOKEN", ""),
-    host="localhost",
-    port=8360,
-    encryption="none",
-    verbosity=0,
+    name="test-service", token=os.getenv("LIGHTSTEP_TOKEN", ""), verbosity=5
 )
 span_processor = BatchExportSpanProcessor(exporter)
-tracer.add_span_processor(span_processor)
+trace.tracer_source().add_span_processor(span_processor)
+
+tracer = trace.get_tracer("lightstep-exporter-example")
 with tracer.start_as_current_span("foo"):
     with tracer.start_as_current_span("bar"):
         with tracer.start_as_current_span("baz") as s:
             s.set_attribute("test", "bah")
-            print(Context)
+            print("Hello world")
 
 span_processor.shutdown()

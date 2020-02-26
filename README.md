@@ -1,12 +1,10 @@
 # LightStep OpenTelemetry Python Exporter
-This is an experimental exporter for opentelemetry-python
+This is an exporter for opentelemetry-python
 
 ### Install
 
 ```bash
-git clone https://github.com/lightstep/opentelemetry-exporter-python.git
-cd opentelemetry-exporter-python
-pip install .
+pip install opentelemetry-ext-lightstep
 ```
 
 ### Initialize
