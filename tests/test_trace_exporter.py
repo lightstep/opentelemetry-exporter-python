@@ -9,61 +9,27 @@ from opentelemetry.sdk.trace.export import SpanExportResult
 from opentelemetry.trace.status import Status, StatusCanonicalCode
 
 
-class MockTracer:
-    """ Used to mock lightstep.Tracer """
-
-    def __init__(
-        self,
-        component_name,
-        access_token,
-        collector_host,
-        collector_port,
-        collector_encryption,
-        verbosity,
-        use_http=False,
-        use_thrift=False,
-    ):
-        self.name = component_name
-        self.token = access_token
-        self.host = collector_host
-        self.port = collector_port
-        self.encryption = collector_encryption
-        self.verbosity = verbosity
-        self.use_http = use_http
-        self.use_thrift = use_thrift
-        self.spans = []
-
-    def record(self, span):
-        self.spans.append(span)
-
-    def flush(self):
-        pass
-
-
 # TODO: add tests for tags/attributes and span hierarchy
 class TestLightStepSpanExporter(unittest.TestCase):
-    @patch("lightstep.Tracer", MockTracer)
-    def test_constructor_default(self):
+    @patch("lightstep.Tracer")
+    def test_constructor_default(self, mock_tracer):
         """Test the default values assigned by constructor."""
         name = "my-service-name"
-        host = "ingest.lightstep.com"
-        port = 443
-        encryption = "tls"
-        verbosity = 0
-        token = ""
-        exporter = LightStepSpanExporter(name)
+        LightStepSpanExporter(name)
+        mock_tracer.assert_called_once_with(
+            component_name=name,
+            access_token="",
+            collector_host="ingest.lightstep.com",
+            collector_port=443,
+            collector_encryption="tls",
+            verbosity=0,
+            use_http=False,
+            use_thrift=True,
+        )
 
-        self.assertEqual(exporter.tracer.name, name)
-        self.assertEqual(exporter.tracer.host, host)
-        self.assertEqual(exporter.tracer.port, port)
-        self.assertEqual(exporter.tracer.encryption, encryption)
-        self.assertEqual(exporter.tracer.verbosity, verbosity)
-        self.assertEqual(exporter.tracer.token, token)
-
-    @patch("lightstep.Tracer", MockTracer)
-    def test_export(self):
+    @patch("lightstep.Tracer")
+    def test_export(self, mock_tracer):
         # pylint: disable=invalid-name
-
         span_names = ("test1", "test2", "test3")
         trace_id = 0x6E0C63257DE34C926F9EFCD03927272E
         span_id = 0x34BF92DEEFC58C92
@@ -132,17 +98,18 @@ class TestLightStepSpanExporter(unittest.TestCase):
         otel_spans[2].end(end_time=end_times[2])
 
         exporter = LightStepSpanExporter("my-service-name")
-        self.assertEqual(exporter.export(otel_spans), SpanExportResult.SUCCESS)
-        self.assertEqual(len(exporter.tracer.spans), len(otel_spans))
+        result_spans = []
+
+        with patch.object(
+            exporter.tracer, "record", side_effect=lambda x: result_spans.append(x)
+        ):
+            self.assertEqual(exporter.export(otel_spans), SpanExportResult.SUCCESS)
+        self.assertEqual(len(result_spans), len(otel_spans))
         for index, _ in enumerate(span_names):
+            self.assertEqual(result_spans[index].operation_name, span_names[index])
             self.assertEqual(
-                exporter.tracer.spans[index].operation_name, span_names[index]
-            )
-            print(start_times[index], end_times[index], durations[index])
-            self.assertEqual(
-                exporter.tracer.spans[index].start_time, start_times[index] / 1000000000
+                result_spans[index].start_time, start_times[index] / 1000000000
             )
             self.assertEqual(
-                round(exporter.tracer.spans[index].duration, 2),
-                durations[index] / 1000000000,
+                round(result_spans[index].duration, 2), durations[index] / 1000000000,
             )
