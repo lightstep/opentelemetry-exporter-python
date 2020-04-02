@@ -49,9 +49,9 @@ class TestLightStepSpanExporter(unittest.TestCase):
             start_times[2] + durations[2],
         )
 
-        span_context = trace_api.SpanContext(trace_id, span_id)
-        parent_context = trace_api.SpanContext(trace_id, parent_id)
-        other_context = trace_api.SpanContext(trace_id, other_id)
+        span_context = trace_api.SpanContext(trace_id, span_id, is_remote=False)
+        parent_context = trace_api.SpanContext(trace_id, parent_id, is_remote=False)
+        other_context = trace_api.SpanContext(trace_id, other_id, is_remote=False)
 
         event_attributes = {
             "annotation_bool": True,
@@ -60,7 +60,7 @@ class TestLightStepSpanExporter(unittest.TestCase):
         }
 
         event_timestamp = base_time + 50 * 10 ** 6
-        event = trace_api.Event(
+        event = trace.Event(
             name="event0", timestamp=event_timestamp, attributes=event_attributes,
         )
 

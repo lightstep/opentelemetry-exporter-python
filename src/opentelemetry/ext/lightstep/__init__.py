@@ -41,6 +41,7 @@ class LightStepSpanExporter(SpanExporter):
             ctx = SpanContext(
                 trace_id=0xFFFFFFFFFFFFFFFF & span.context.trace_id,
                 span_id=0xFFFFFFFFFFFFFFFF & span.context.span_id,
+                is_remote=False,
             )
             lightstep_span = BasicSpan(
                 self.tracer,
