@@ -21,3 +21,7 @@ publish: dist
 
 publish-test:
 	twine upload --repository-url https://test.pypi.org/legacy/ dist/*
+
+changelog:
+	pip install pystache gitchangelog
+	gitchangelog
