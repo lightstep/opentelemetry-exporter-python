@@ -44,7 +44,9 @@ class LightStepSpanExporter(SpanExporter):
                 is_remote=span.context.is_remote,
             )
             parent_id = None
-            if span.parent is not None:
+            if isinstance(span.parent, SpanContext):
+                parent_id = span.parent.span_id
+            elif isinstance(span.parent, Span):
                 parent_id = span.parent.context.span_id
             lightstep_span = BasicSpan(
                 self.tracer,
