@@ -1,8 +1,7 @@
 ## Unreleased
 
-### Other
-
-* Bumping version. [Alex Boten]
+v0.6b1
+======
 
 * Set parent ID if present (#7) [alrex]
 
