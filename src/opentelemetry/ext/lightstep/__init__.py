@@ -2,6 +2,7 @@ import typing
 import lightstep
 
 from basictracer.span import BasicSpan
+from opentelemetry import trace as trace_api
 from opentelemetry.sdk.trace.export import Span, SpanExporter, SpanExportResult
 from opentelemetry.trace import SpanContext
 
@@ -43,10 +44,16 @@ class LightStepSpanExporter(SpanExporter):
                 span_id=0xFFFFFFFFFFFFFFFF & span.context.span_id,
                 is_remote=span.context.is_remote,
             )
+            parent_id = None
+            if isinstance(span.parent, SpanContext):
+                parent_id = span.parent.span_id
+            elif isinstance(span.parent, trace_api.Span):
+                parent_id = span.parent.get_context().span_id
             lightstep_span = BasicSpan(
                 self.tracer,
                 operation_name=span.name,
                 context=ctx,
+                parent_id=parent_id,
                 start_time=_nsec_to_sec(span.start_time),
                 tags=span.attributes,
             )

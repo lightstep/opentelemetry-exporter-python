@@ -113,3 +113,8 @@ class TestLightStepSpanExporter(unittest.TestCase):
             self.assertEqual(
                 round(result_spans[index].duration, 2), durations[index] / 1000000000,
             )
+
+            # test parent hierarchy
+            self.assertIsNotNone(result_spans[0].parent_id)
+            self.assertEqual(result_spans[0].parent_id, result_spans[1].context.span_id)
+            self.assertIsNone(result_spans[1].parent_id)
