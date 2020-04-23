@@ -5,6 +5,7 @@ from basictracer.span import BasicSpan
 from opentelemetry import trace as trace_api
 from opentelemetry.sdk.trace.export import Span, SpanExporter, SpanExportResult
 from opentelemetry.trace import SpanContext
+from .version import __version__
 
 
 def _nsec_to_sec(nsec=0):
@@ -25,7 +26,14 @@ class LightStepSpanExporter(SpanExporter):
         port=443,
         encryption="tls",
         verbosity=0,
+        service_version=None,
     ):
+        tags = {
+            "lightstep.tracer_platform": "otel-ls-python",
+            "lightstep.tracer_platform_version": __version__,
+        }
+        if service_version is not None:
+            tags["service.version"] = service_version
         self.tracer = lightstep.Tracer(
             component_name=name,
             access_token=token,
@@ -35,10 +43,16 @@ class LightStepSpanExporter(SpanExporter):
             verbosity=verbosity,
             use_http=False,
             use_thrift=True,
+            tags=tags,
         )
 
     def export(self, spans: typing.Sequence[Span]) -> "SpanExportResult":
         for span in spans:
+            attrs = {}
+            if span.resource:
+                attrs.update(span.resource.labels)
+            if span.attributes:
+                attrs.update(span.attributes)
             ctx = SpanContext(
                 trace_id=0xFFFFFFFFFFFFFFFF & span.context.trace_id,
                 span_id=0xFFFFFFFFFFFFFFFF & span.context.span_id,
@@ -55,7 +69,7 @@ class LightStepSpanExporter(SpanExporter):
                 context=ctx,
                 parent_id=parent_id,
                 start_time=_nsec_to_sec(span.start_time),
-                tags=span.attributes,
+                tags=attrs,
             )
             for event in span.events:
                 event.attributes["message"] = event.name

@@ -4,6 +4,7 @@ from unittest.mock import patch
 
 from opentelemetry import trace as trace_api
 from opentelemetry.sdk import trace
+import opentelemetry.ext.lightstep
 from opentelemetry.ext.lightstep import LightStepSpanExporter
 from opentelemetry.sdk.trace.export import SpanExportResult
 from opentelemetry.trace.status import Status, StatusCanonicalCode
@@ -12,7 +13,9 @@ from opentelemetry.trace.status import Status, StatusCanonicalCode
 class TestLightStepSpanExporter(unittest.TestCase):
     def setUp(self):
         self._trace_id = 0x6E0C63257DE34C926F9EFCD03927272E
-        self._exporter = LightStepSpanExporter("my-service-name")
+        self._exporter = LightStepSpanExporter(
+            "my-service-name", service_version="1.2.3"
+        )
         self._exporter.tracer = unittest.mock.Mock()
         self._span_context = trace_api.SpanContext(
             self._trace_id, 0x2222222222222222, is_remote=False
@@ -47,6 +50,10 @@ class TestLightStepSpanExporter(unittest.TestCase):
             verbosity=0,
             use_http=False,
             use_thrift=True,
+            tags={
+                "lightstep.tracer_platform": "otel-ls-python",
+                "lightstep.tracer_platform_version": opentelemetry.ext.lightstep.__version__,
+            },
         )
 
     @patch("lightstep.Tracer")
@@ -174,4 +181,14 @@ class TestLightStepSpanExporter(unittest.TestCase):
     @patch("lightstep.Tracer")
     def test_resources(self, mock_tracer):
         """ test resources """
-        # TODO
+        resource = trace.Resource(labels={"test": "123", "other": "456"})
+        otel_span = trace.Span(
+            name=__name__, context=self._span_context, resource=resource,
+        )
+        otel_span.set_attribute("test", "789")
+        otel_span.set_attribute("one-more", "000")
+        result_spans = self._process_spans([otel_span])
+        self.assertEqual(len(result_spans), 1)
+        self.assertEqual(result_spans[0].tags.get("test"), "789")
+        self.assertEqual(result_spans[0].tags.get("other"), "456")
+        self.assertEqual(result_spans[0].tags.get("one-more"), "000")
