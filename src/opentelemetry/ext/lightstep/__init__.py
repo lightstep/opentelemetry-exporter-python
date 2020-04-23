@@ -49,9 +49,9 @@ class LightStepSpanExporter(SpanExporter):
     def export(self, spans: typing.Sequence[Span]) -> "SpanExportResult":
         for span in spans:
             attrs = {}
-            if span.resource:
+            if span.resource is not None:
                 attrs.update(span.resource.labels)
-            if span.attributes:
+            if span.attributes is not None:
                 attrs.update(span.attributes)
             ctx = SpanContext(
                 trace_id=0xFFFFFFFFFFFFFFFF & span.context.trace_id,
