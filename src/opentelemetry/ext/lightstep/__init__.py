@@ -57,6 +57,11 @@ class LightStepSpanExporter(SpanExporter):
                 start_time=_nsec_to_sec(span.start_time),
                 tags=span.attributes,
             )
+            for event in span.events:
+                event.attributes["message"] = event.name
+                lightstep_span.log_kv(
+                    event.attributes, timestamp=_nsec_to_sec(event.timestamp)
+                )
             lightstep_span.finish(finish_time=_nsec_to_sec(span.end_time))
         self.tracer.flush()
         return SpanExportResult.SUCCESS
