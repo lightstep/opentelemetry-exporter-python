@@ -1,5 +1,9 @@
 ## Unreleased
 
+### Fix
+
+* Events are reported as logs. [Alex Boten]
+
 v0.6b1
 ======
 
