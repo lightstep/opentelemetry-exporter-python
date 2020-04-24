@@ -1,3 +1,4 @@
+![build status](https://github.com/lightstep/opentelemetry-exporter-python/workflows/build/badge.svg) [![PyPI version](https://badge.fury.io/py/opentelemetry-ext-lightstep.svg)](https://badge.fury.io/py/opentelemetry-ext-lightstep)
 # LightStep OpenTelemetry Python Exporter
 This is an exporter for opentelemetry-python
 
