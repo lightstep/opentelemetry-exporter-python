@@ -1,5 +1,8 @@
 ## Unreleased
 
+v0.6b2
+======
+
 ### Changes
 
 * Resources now added to span tags. [alrex]
