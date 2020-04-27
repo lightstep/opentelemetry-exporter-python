@@ -1,8 +1,14 @@
 ## Unreleased
 
+### Changes
+
+* Resources now added to span tags. [alrex]
+
+  Adding support for resources. They will be added to a span's tags. Also adding a parameter to allow users to set the `service_version`.
+
 ### Fix
 
-* Events are reported as logs. [Alex Boten]
+* Events are reported as logs. [alrex]
 
 v0.6b1
 ======
