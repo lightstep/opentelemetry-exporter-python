@@ -8,7 +8,6 @@ import requests
 
 from google.protobuf.duration_pb2 import Duration
 from google.protobuf.timestamp_pb2 import Timestamp
-from lightstep.collector_pb2 import KeyValue, Reporter
 
 from opentelemetry.sdk.metrics.export import (
     MetricsExporter,
@@ -17,6 +16,8 @@ from opentelemetry.sdk.metrics.export import (
     Sequence,
 )
 
+from ..api_client import APIClient
+from ..protobuf.collector_pb2 import KeyValue, Reporter
 from ..protobuf.metrics_pb2 import IngestRequest, MetricKind, MetricPoint
 
 _COMPONENT_KEY = "lightstep.component_name"
@@ -34,35 +35,8 @@ _DEFAULT_METRICS_URL = os.environ.get(
 )
 _DEFAULT_SERVICE_VERSION = "0.0.0"
 
-DEFAULT_ACCEPT = "application/octet-stream"
-DEFAULT_CONTENT_TYPE = "application/octet-stream"
 
-# TODO: ensure this matches RCA metrics retry codes
-_RETRYABLE = [408, 429, 500, 501, 502, 503, 504]
-
-
-class MetricsReporter:
-    """ HTTP client to send data to Lightstep """
-
-    def __init__(
-        self, token, url=_DEFAULT_METRICS_URL,
-    ):
-        self._headers = {
-            "Accept": DEFAULT_ACCEPT,
-            "Content-Type": DEFAULT_CONTENT_TYPE,
-            "Lightstep-Access-Token": token,
-        }
-        self._url = url
-
-    @backoff.on_exception(backoff.expo, Exception, max_time=5)
-    def send(self, content, token=None):
-        if token is not None:
-            self._headers["Lightstep-Access-Token"] = token
-
-        return requests.post(self._url, headers=self._headers, data=content)
-
-
-class LightStepMetricsExporter(MetricsExporter):
+class LightstepMetricsExporter(MetricsExporter):
     def _calc_value(self, key, value):
         if self._filters.get(key, MetricKind.GAUGE) == MetricKind.GAUGE:
             return value
@@ -98,7 +72,7 @@ class LightStepMetricsExporter(MetricsExporter):
         self._component_name = name
         self._service_version = service_version
         self._token = token
-        self._client = MetricsReporter(token, url=url)
+        self._client = APIClient(token, url=url)
         self._reporter = Reporter(
             tags=[
                 KeyValue(key=_HOSTNAME_KEY, string_value=os.uname()[1]),
@@ -189,9 +163,7 @@ class LightStepMetricsExporter(MetricsExporter):
         if resp.status_code == requests.codes["ok"]:
             self._last_success = start_time.ToSeconds()
             return MetricsExportResult.SUCCESS
-        if resp.status_code in _RETRYABLE:
-            return MetricsExportResult.FAILED_RETRYABLE
-        return MetricsExportResult.FAILED_NOT_RETRYABLE
+        return MetricsExportResult.FAILURE
 
     def shutdown(self) -> None:
         """Shuts down the exporter.

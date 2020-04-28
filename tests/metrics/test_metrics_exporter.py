@@ -3,7 +3,7 @@ import unittest
 
 from unittest import mock
 from unittest.mock import Mock
-from opentelemetry.ext.lightstep.metrics import LightStepMetricsExporter
+from opentelemetry.ext.lightstep.metrics import LightstepMetricsExporter
 from opentelemetry.ext.lightstep.protobuf.metrics_pb2 import IngestRequest
 from opentelemetry.sdk import metrics
 from opentelemetry.sdk.metrics.export import (
@@ -33,28 +33,22 @@ def get_metric(name="name", desc="description"):
     return MetricRecord(aggregator, labels, counter)
 
 
-class TestLightStepMetricsExporter(unittest.TestCase):
+class TestLightstepMetricsExporter(unittest.TestCase):
     def setUp(self):
-        self.exporter = LightStepMetricsExporter(name="test_exporter", token="invalid")
+        self.exporter = LightstepMetricsExporter(name="test_exporter", token="invalid")
         self.exporter._last_success = int(time.time()) - 5
         self.metrics = [get_metric("mem.available", "memory available")]
-
-    @mock.patch("requests.post")
-    def test_export_failed_retryable(self, mock_post):
-        args = {"status_code": 500}
-        mock_post.return_value = Mock(**args)
-        result = self.exporter.export(self.metrics)
-        self.assertEqual(result, MetricsExportResult.FAILED_RETRYABLE)
 
     @mock.patch("requests.post")
     def test_export_failed_not_retryable(self, mock_post):
         args = {"status_code": 404}
         mock_post.return_value = Mock(**args)
         result = self.exporter.export(self.metrics)
-        self.assertEqual(result, MetricsExportResult.FAILED_NOT_RETRYABLE)
+        self.assertEqual(result, MetricsExportResult.FAILURE)
 
     @mock.patch("requests.post")
     def test_request_headers(self, mock_post):
+        """Test the token is passed from the constructor to the api request"""
         m = Mock()
 
         def side_effect(*args, **kwargs):
@@ -69,16 +63,6 @@ class TestLightStepMetricsExporter(unittest.TestCase):
             "Content-Type": "application/octet-stream",
             "Lightstep-Access-Token": "invalid",
         }
-        mock_post.assert_called()
-
-        self.assertEqual(len(m.headers), len(expected))
-        self.assertEqual(m.headers, expected)
-
-        exporter = LightStepMetricsExporter(name="test_exporter", token="other")
-
-        exporter.export(self.metrics)  # initial report gets dropped
-        exporter.export(self.metrics)
-        expected["Lightstep-Access-Token"] = "other"
         mock_post.assert_called()
 
         self.assertEqual(len(m.headers), len(expected))
