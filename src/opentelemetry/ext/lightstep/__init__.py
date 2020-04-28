@@ -14,8 +14,8 @@ def _nsec_to_sec(nsec=0):
     return nsec / 1000000000
 
 
-class LightStepSpanExporter(SpanExporter):
-    """LightStep span exporter for OpenTelemetry.
+class LightstepSpanExporter(SpanExporter):
+    """Lightstep span exporter for OpenTelemetry.
     """
 
     def __init__(
@@ -82,3 +82,7 @@ class LightStepSpanExporter(SpanExporter):
 
     def shutdown(self) -> None:
         self.tracer.flush()
+
+
+class LightStepSpanExporter(LightstepSpanExporter):
+    """Backwards compatibility wrapper class"""
