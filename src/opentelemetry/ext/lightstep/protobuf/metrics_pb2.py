@@ -4,7 +4,9 @@
 
 import sys
 
-_b = sys.version_info[0] < 3 and (lambda x: x) or (lambda x: x.encode("latin1"))
+_b = (
+    sys.version_info[0] < 3 and (lambda x: x) or (lambda x: x.encode("latin1"))
+)
 from google.protobuf.internal import enum_type_wrapper
 from google.protobuf import descriptor as _descriptor
 from google.protobuf import message as _message
@@ -16,9 +18,13 @@ from google.protobuf import symbol_database as _symbol_database
 _sym_db = _symbol_database.Default()
 
 
-import lightstep.collector_pb2 as collector__pb2
-from google.protobuf import duration_pb2 as google_dot_protobuf_dot_duration__pb2
-from google.protobuf import timestamp_pb2 as google_dot_protobuf_dot_timestamp__pb2
+import opentelemetry.ext.lightstep.protobuf.collector_pb2 as collector__pb2
+from google.protobuf import (
+    duration_pb2 as google_dot_protobuf_dot_duration__pb2,
+)
+from google.protobuf import (
+    timestamp_pb2 as google_dot_protobuf_dot_timestamp__pb2,
+)
 
 
 DESCRIPTOR = _descriptor.FileDescriptor(
@@ -52,7 +58,11 @@ _METRICKIND = _descriptor.EnumDescriptor(
             type=None,
         ),
         _descriptor.EnumValueDescriptor(
-            name="COUNTER", index=1, number=1, serialized_options=None, type=None
+            name="COUNTER",
+            index=1,
+            number=1,
+            serialized_options=None,
+            type=None,
         ),
         _descriptor.EnumValueDescriptor(
             name="GAUGE", index=2, number=2, serialized_options=None, type=None
@@ -340,7 +350,9 @@ _METRICPOINT.oneofs_by_name["value"].fields.append(
 _METRICPOINT.fields_by_name[
     "double_value"
 ].containing_oneof = _METRICPOINT.oneofs_by_name["value"]
-_INGESTREQUEST.fields_by_name["reporter"].message_type = collector__pb2._REPORTER
+_INGESTREQUEST.fields_by_name[
+    "reporter"
+].message_type = collector__pb2._REPORTER
 _INGESTREQUEST.fields_by_name["points"].message_type = _METRICPOINT
 DESCRIPTOR.message_types_by_name["MetricPoint"] = _METRICPOINT
 DESCRIPTOR.message_types_by_name["IngestRequest"] = _INGESTREQUEST

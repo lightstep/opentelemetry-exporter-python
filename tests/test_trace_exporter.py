@@ -139,13 +139,23 @@ class TestLightStepSpanExporter(unittest.TestCase):
         otel_span.set_attribute("key_bool", False)
         otel_span.set_attribute("key_string", "hello_world")
         otel_span.set_attribute("key_float", 111.22)
+        otel_span.set_attribute("key_int", 99)
         result_spans = self._process_spans([otel_span])
 
         self.assertEqual(len(result_spans), 1)
-        self.assertEqual(len(result_spans[0].tags), 3)
-        self.assertFalse(result_spans[0].tags.get("key_bool"))
-        self.assertEqual(result_spans[0].tags.get("key_string"), "hello_world")
-        self.assertEqual(result_spans[0].tags.get("key_float"), 111.22)
+        self.assertEqual(len(result_spans[0].tags), 4)
+
+        for tag in result_spans[0].tags:
+            if tag.key == "key_bool":
+                self.assertFalse(tag.bool_value)
+            elif tag.key == "key_string":
+                self.assertEqual(tag.string_value, "hello_world")
+            elif tag.key == "key_float":
+                self.assertEqual(tag.double_value, 111.22)
+            elif tag.key == "key_int":
+                self.assertEqual(tag.int_value, 99)
+            else:
+                raise Exception("unexpected value in tags")
 
     def test_events(self):
         """Test events are translated into logs."""
@@ -199,6 +209,12 @@ class TestLightStepSpanExporter(unittest.TestCase):
         result_spans = self._process_spans([otel_span])
 
         self.assertEqual(len(result_spans), 1)
-        self.assertEqual(result_spans[0].tags["test"], "789")
-        self.assertEqual(result_spans[0].tags["other"], "456")
-        self.assertEqual(result_spans[0].tags["one-more"], "000")
+        for tag in result_spans[0].tags:
+            if tag.key == "test":
+                self.assertEqual(tag.string_value, "789")
+            elif tag.key == "other":
+                self.assertEqual(tag.string_value, "456")
+            elif tag.key == "one-more":
+                self.assertEqual(tag.string_value, "000")
+            else:
+                raise Exception("unexpected value in tags")

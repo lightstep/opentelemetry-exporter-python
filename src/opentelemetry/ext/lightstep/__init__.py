@@ -92,11 +92,13 @@ class LightstepSpanExporter(sdk.SpanExporter):
         for span in spans:
             span_record = self.create_span_record(span, self._guid)
             span_records.append(span_record)
-            # attrs = {}
-            # if span.resource is not None:
-            #     attrs.update(span.resource.labels)
-            # if span.attributes is not None:
-            #     attrs.update(span.attributes)
+            attrs = {}
+            if span.resource is not None:
+                attrs.update(span.resource.labels)
+            if span.attributes is not None:
+                attrs.update(span.attributes)
+            for key, val in attrs.items():
+                self.append_attribute(span_record, key, val)
             # ctx = SpanContext(
             #     trace_id= span.context.trace_id,
             #     span_id=0xFFFFFFFFFFFFFFFF & span.context.span_id,
@@ -179,7 +181,14 @@ class LightstepSpanExporter(sdk.SpanExporter):
     def append_attribute(self, span_record, key, value):
         kv = span_record.tags.add()
         kv.key = key
-        kv.string_value = value
+        if isinstance(value, bool):
+            kv.bool_value = value
+        elif isinstance(value, int):
+            kv.int_value = value
+        elif isinstance(value, float):
+            kv.double_value = value
+        else:
+            kv.string_value = value
 
     def append_join_id(self, span_record, key, value):
         self.append_attribute(span_record, key, value)
