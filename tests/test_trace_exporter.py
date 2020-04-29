@@ -163,7 +163,8 @@ class TestLightStepSpanExporter(unittest.TestCase):
         event_attributes = {
             "annotation_bool": True,
             "annotation_string": "annotation_test",
-            "key_float": 0.3,
+            "annotation_float": 0.3,
+            "annotation_int": 77,
         }
 
         event_timestamp = base_time + 50 * 10 ** 6
@@ -179,9 +180,27 @@ class TestLightStepSpanExporter(unittest.TestCase):
         self.assertEqual(len(result_spans), 1)
         self.assertEqual(len(result_spans[0].logs), 1)
         log = result_spans[0].logs[0]
-        # timestamp is in seconds, event_timestamp in ns
-        self.assertEqual(log.timestamp, (event_timestamp / 1000000000))
-        self.assertEqual(log.key_values, event_attributes)
+        self.assertEqual(
+            log.timestamp.seconds, int(event_timestamp / 1000000000)
+        )
+        self.assertEqual(len(log.fields), 5)
+        for tag in log.fields:
+            if tag.key == "annotation_bool":
+                self.assertTrue(tag.bool_value)
+            elif tag.key == "annotation_string":
+                self.assertEqual(tag.string_value, "annotation_test")
+            elif tag.key == "annotation_float":
+                self.assertEqual(tag.double_value, 0.3)
+            elif tag.key == "annotation_int":
+                self.assertEqual(tag.int_value, 77)
+            elif tag.key == "message":
+                self.assertEqual(tag.string_value, "event0")
+            else:
+                raise Exception("unexpected value in fields")
+
+        self.assertEqual(
+            log.timestamp.nanos, int(event_timestamp % 1000000000)
+        )
 
     def test_links(self):
         """Test links are translated into references."""

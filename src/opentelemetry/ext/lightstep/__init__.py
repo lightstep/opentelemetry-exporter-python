@@ -10,10 +10,7 @@ from opentelemetry.ext.lightstep import reporter
 from opentelemetry.ext.lightstep.api_client import APIClient
 from opentelemetry.sdk.trace import export as sdk
 
-# from opentelemetry.sdk.trace.export import Span, SpanExporter, SpanExportResult
-from . import util
-from .version import __version__
-
+from opentelemetry.ext.lightstep import util
 from opentelemetry.ext.lightstep.protobuf.collector_pb2 import (
     Auth,
     ReportRequest,
@@ -22,6 +19,7 @@ from opentelemetry.ext.lightstep.protobuf.collector_pb2 import (
     Reference,
     SpanContext,
 )
+from opentelemetry.ext.lightstep.version import __version__
 
 TRACING_URL_ENV_VAR = "LS_TRACING_URL"
 _DEFAULT_TRACING_URL = os.environ.get(
@@ -31,6 +29,17 @@ _DEFAULT_TRACING_URL = os.environ.get(
 
 _NANOS_IN_SECONDS = 1000000000
 _NANOS_IN_MICROS = 1000
+
+
+def _set_kv_value(kv, value):
+    if isinstance(value, bool):
+        kv.bool_value = value
+    elif isinstance(value, int):
+        kv.int_value = value
+    elif isinstance(value, float):
+        kv.double_value = value
+    else:
+        kv.string_value = value
 
 
 def _nsec_to_sec(nsec=0):
@@ -45,7 +54,7 @@ def _time_to_seconds_nanos(nsec):
     """
     nsec = nsec or 0
     seconds = int(_nsec_to_sec(nsec))
-    nanos = int((nsec % _NANOS_IN_SECONDS) / _NANOS_IN_MICROS)
+    nanos = int(nsec % _NANOS_IN_SECONDS)
     return (seconds, nanos)
 
 
@@ -67,7 +76,6 @@ class LightstepSpanExporter(sdk.SpanExporter):
         host="ingest.lightstep.com",
         port=443,
         encryption="tls",
-        verbosity=0,
         service_version=None,
     ):
         tags = {
@@ -75,7 +83,11 @@ class LightstepSpanExporter(sdk.SpanExporter):
             "lightstep.tracer_platform_version": __version__,
         }
 
-        url = "https://{}:{}/api/v2/report".format(host, port)
+        scheme = "https"
+        if encryption != "tls":
+            scheme = "http"
+
+        url = "{}://{}:{}/api/v2/report".format(scheme, host, port)
 
         self._auth = self.create_auth(token)
         self._client = APIClient(token, url=url)
@@ -99,30 +111,13 @@ class LightstepSpanExporter(sdk.SpanExporter):
                 attrs.update(span.attributes)
             for key, val in attrs.items():
                 self.append_attribute(span_record, key, val)
-            # ctx = SpanContext(
-            #     trace_id= span.context.trace_id,
-            #     span_id=0xFFFFFFFFFFFFFFFF & span.context.span_id,
-            #     is_remote=span.context.is_remote,
-            # )
-            # parent_id = None
-            # if isinstance(span.parent, SpanContext):
-            #     parent_id = span.parent.span_id
-            # elif isinstance(span.parent, trace_api.Span):
-            #     parent_id = span.parent.get_context().span_id
-            # lightstep_span = BasicSpan(
-            #     self.tracer,
-            #     operation_name=span.name,
-            #     context=ctx,
-            #     parent_id=parent_id,
-            #     start_time=_nsec_to_sec(span.start_time),
-            #     tags=attrs,
-            # )
-            # for event in span.events:
-            #     event.attributes["message"] = event.name
-            #     lightstep_span.log_kv(
-            #         event.attributes, timestamp=_nsec_to_sec(event.timestamp)
-            #     )
-            # lightstep_span.finish(finish_time=_nsec_to_sec(span.end_time))
+
+            for event in span.events:
+                event.attributes["message"] = event.name
+                self.append_log(
+                    span_record, event.attributes, event.timestamp,
+                )
+
         if len(span_records) == 0:
             return sdk.SpanExportResult.SUCCESS
 
@@ -135,7 +130,6 @@ class LightstepSpanExporter(sdk.SpanExporter):
 
         resp = self._client.send(report_request.SerializeToString())
         if resp.status_code == requests.codes["ok"]:
-            # self._last_success = start_time.ToSeconds()
             return sdk.SpanExportResult.SUCCESS
         return sdk.SpanExportResult.FAILURE
 
@@ -181,29 +175,22 @@ class LightstepSpanExporter(sdk.SpanExporter):
     def append_attribute(self, span_record, key, value):
         kv = span_record.tags.add()
         kv.key = key
-        if isinstance(value, bool):
-            kv.bool_value = value
-        elif isinstance(value, int):
-            kv.int_value = value
-        elif isinstance(value, float):
-            kv.double_value = value
-        else:
-            kv.string_value = value
+        _set_kv_value(kv, value)
 
     def append_join_id(self, span_record, key, value):
         self.append_attribute(span_record, key, value)
 
-    def append_log(self, span_record, log):
-        if log.key_values is not None and len(log.key_values) > 0:
-            seconds, nanos = _time_to_seconds_nanos(log.timestamp)
+    def append_log(self, span_record, attrs, timestamp):
+        if len(attrs) > 0:
+            seconds, nanos = _time_to_seconds_nanos(timestamp)
 
             proto_log = span_record.logs.add()
             proto_log.timestamp.seconds = seconds
             proto_log.timestamp.nanos = nanos
-            for k, v in log.key_values.items():
+            for k, v in attrs.items():
                 field = proto_log.fields.add()
                 field.key = k
-                field.string_value = util._coerce_str(v)
+                _set_kv_value(field, v)
 
     def create_report(self, runtime, span_records):
         return ReportRequest(reporter=runtime, spans=span_records)
