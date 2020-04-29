@@ -3,7 +3,7 @@ line-length = 79
 exclude = '''
 (
   /(  # generated files
-    src/opentelemetry/ext/lightstep/protos
+    src/opentelemetry/ext/lightstep/protobuf
   )/
 )
 '''

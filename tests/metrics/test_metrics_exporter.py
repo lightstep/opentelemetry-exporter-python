@@ -28,14 +28,18 @@ def get_metric(name="name", desc="description"):
     meter = metrics.MeterProvider().get_meter(__name__)
     labels = (("host", "myhost"),)
     aggregator = ObserverAggregator()
-    counter = metrics.Counter(name, desc, "bytes", int, meter, ("environment",),)
+    counter = metrics.Counter(
+        name, desc, "bytes", int, meter, ("environment",),
+    )
 
     return MetricRecord(aggregator, labels, counter)
 
 
 class TestLightstepMetricsExporter(unittest.TestCase):
     def setUp(self):
-        self.exporter = LightstepMetricsExporter(name="test_exporter", token="invalid")
+        self.exporter = LightstepMetricsExporter(
+            name="test_exporter", token="invalid"
+        )
         self.exporter._last_success = int(time.time()) - 5
         self.metrics = [get_metric("mem.available", "memory available")]
 
