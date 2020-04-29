@@ -31,15 +31,15 @@ _NANOS_IN_SECONDS = 1000000000
 _NANOS_IN_MICROS = 1000
 
 
-def _set_kv_value(kv, value):
+def _set_kv_value(key_value, value):
     if isinstance(value, bool):
-        kv.bool_value = value
+        key_value.bool_value = value
     elif isinstance(value, int):
-        kv.int_value = value
+        key_value.int_value = value
     elif isinstance(value, float):
-        kv.double_value = value
+        key_value.double_value = value
     else:
-        kv.string_value = value
+        key_value.string_value = value
 
 
 def _nsec_to_sec(nsec=0):
@@ -63,6 +63,33 @@ def _span_duration(start, end):
     start = start or 0
     end = end or 0
     return math.floor(round((end - start) / 1000))
+
+
+def _create_span_record(span: sdk.Span):
+    span_context = SpanContext(
+        trace_id=0xFFFFFFFFFFFFFFFF & span.context.trace_id,
+        span_id=0xFFFFFFFFFFFFFFFF & span.context.span_id,
+    )
+
+    parent_id = None
+    if isinstance(span.parent, trace_api.SpanContext):
+        parent_id = span.parent.span_id
+    elif isinstance(span.parent, trace_api.Span):
+        parent_id = span.parent.get_context().span_id
+
+    seconds, nanos = _time_to_seconds_nanos(span.start_time)
+    span_record = Span(
+        span_context=span_context,
+        operation_name=span.name,
+        start_timestamp=Timestamp(seconds=seconds, nanos=nanos),
+        duration_micros=int(_span_duration(span.start_time, span.end_time)),
+    )
+    if parent_id is not None:
+        reference = span_record.references.add()
+        reference.relationship = Reference.CHILD_OF
+        reference.span_context.span_id = parent_id
+
+    return span_record
 
 
 class LightstepSpanExporter(sdk.SpanExporter):
@@ -92,7 +119,9 @@ class LightstepSpanExporter(sdk.SpanExporter):
         else:
             url = "{}://{}:{}/api/v2/report".format(scheme, host, port)
 
-        self._auth = self.create_auth(token)
+        self._auth = Auth()
+        self._auth.access_token = token
+
         self._client = APIClient(token, url=url)
         self._guid = util._generate_guid()
         self._reporter = reporter.get_reporter(
@@ -105,7 +134,7 @@ class LightstepSpanExporter(sdk.SpanExporter):
     def export(self, spans: typing.Sequence[sdk.Span]) -> sdk.SpanExportResult:
         span_records = []
         for span in spans:
-            span_record = self.create_span_record(span, self._guid)
+            span_record = _create_span_record(span)
             span_records.append(span_record)
             attrs = {}
             if span.resource is not None:
@@ -113,7 +142,9 @@ class LightstepSpanExporter(sdk.SpanExporter):
             if span.attributes is not None:
                 attrs.update(span.attributes)
             for key, val in attrs.items():
-                self.append_attribute(span_record, key, val)
+                key_value = span_record.tags.add()
+                key_value.key = key
+                _set_kv_value(key_value, val)
 
             for event in span.events:
                 event.attributes["message"] = event.name
@@ -129,6 +160,7 @@ class LightstepSpanExporter(sdk.SpanExporter):
         )
 
         resp = self._client.send(report_request.SerializeToString())
+        print(resp)
         if resp.status_code == requests.codes["ok"]:
             return sdk.SpanExportResult.SUCCESS
         return sdk.SpanExportResult.FAILURE
@@ -137,49 +169,6 @@ class LightstepSpanExporter(sdk.SpanExporter):
         """Flush remaining spans"""
         # self.tracer.flush()
 
-    def create_auth(self, access_token):
-        auth = Auth()
-        auth.access_token = access_token
-        return auth
-
-    def create_span_record(self, span: sdk.Span, guid: str):
-        #     is_remote=span.context.is_remote,
-        span_context = SpanContext(
-            trace_id=0xFFFFFFFFFFFFFFFF & span.context.trace_id,
-            span_id=0xFFFFFFFFFFFFFFFF & span.context.span_id,
-        )
-        parent_id = None
-        if isinstance(span.parent, trace_api.SpanContext):
-            parent_id = span.parent.span_id
-        elif isinstance(span.parent, trace_api.Span):
-            parent_id = span.parent.get_context().span_id
-            #     start_time=_nsec_to_sec(span.start_time),
-            #     tags=attrs,
-            # )
-        seconds, nanos = _time_to_seconds_nanos(span.start_time)
-        span_record = Span(
-            span_context=span_context,
-            operation_name=span.name,
-            start_timestamp=Timestamp(seconds=seconds, nanos=nanos),
-            duration_micros=int(
-                _span_duration(span.start_time, span.end_time)
-            ),
-        )
-        if parent_id is not None:
-            reference = span_record.references.add()
-            reference.relationship = Reference.CHILD_OF
-            reference.span_context.span_id = parent_id
-
-        return span_record
-
-    def append_attribute(self, span_record, key, value):
-        kv = span_record.tags.add()
-        kv.key = key
-        _set_kv_value(kv, value)
-
-    def append_join_id(self, span_record, key, value):
-        self.append_attribute(span_record, key, value)
-
     def append_log(self, span_record, attrs, timestamp):
         if len(attrs) > 0:
             seconds, nanos = _time_to_seconds_nanos(timestamp)
@@ -187,26 +176,10 @@ class LightstepSpanExporter(sdk.SpanExporter):
             proto_log = span_record.logs.add()
             proto_log.timestamp.seconds = seconds
             proto_log.timestamp.nanos = nanos
-            for k, v in attrs.items():
+            for key, val in attrs.items():
                 field = proto_log.fields.add()
-                field.key = k
-                _set_kv_value(field, v)
-
-    def create_report(self, runtime, span_records):
-        return ReportRequest(reporter=runtime, spans=span_records)
-
-    def combine_span_records(self, report_request, span_records):
-        report_request.spans.extend(span_records)
-        return report_request.spans
-
-    def num_span_records(self, report_request):
-        return len(report_request.spans)
-
-    def get_span_records(self, report_request):
-        return report_request.spans
-
-    def get_span_name(self, span_record):
-        return span_record.operation_name
+                field.key = key
+                _set_kv_value(field, val)
 
 
 class LightStepSpanExporter(LightstepSpanExporter):
