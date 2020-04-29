@@ -1,4 +1,5 @@
 test:
+	pip install -e .[test]
 	pytest
 
 cover:
