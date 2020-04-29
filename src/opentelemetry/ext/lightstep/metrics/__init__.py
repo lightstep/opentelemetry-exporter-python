@@ -1,9 +1,7 @@
 import os
-import platform
 import random
 import string
 
-import backoff
 import requests
 
 from google.protobuf.duration_pb2 import Duration
@@ -16,17 +14,17 @@ from opentelemetry.sdk.metrics.export import (
     Sequence,
 )
 
-from ..api_client import APIClient
-from ..protobuf.collector_pb2 import KeyValue, Reporter
-from ..protobuf.metrics_pb2 import IngestRequest, MetricKind, MetricPoint
+from opentelemetry.ext.lightstep import reporter
+from opentelemetry.ext.lightstep.api_client import APIClient
+from opentelemetry.ext.lightstep.protobuf.collector_pb2 import KeyValue
+from opentelemetry.ext.lightstep.protobuf.metrics_pb2 import (
+    IngestRequest,
+    MetricKind,
+    MetricPoint,
+)
 
-_COMPONENT_KEY = "lightstep.component_name"
-_HOSTNAME_KEY = "lightstep.hostname"
-_REPORTER_PLATFORM_KEY = "lightstep.reporter_platform"
-_REPORTER_PLATFORM = "python"
-_REPORTER_PLATFORM_VERSION_KEY = "lightstep.reporter_platform_version"
-_REPORTER_VERSION_KEY = "lightstep.reporter_version"
-_SERVICE_VERSION_KEY = "service.version"
+from .. import util
+
 _MAX_DURATION = 10 * 60  # ten minutes in seconds
 
 METRICS_URL_ENV_VAR = "LS_METRICS_URL"
@@ -69,38 +67,37 @@ class LightstepMetricsExporter(MetricsExporter):
             "net.bytes_recv": MetricKind.COUNTER,
             "net.bytes_sent": MetricKind.COUNTER,
         }
-        self._component_name = name
+        self._service_name = name
         self._service_version = service_version
         self._token = token
         self._client = APIClient(token, url=url)
-        self._reporter = Reporter(
-            tags=[
-                KeyValue(key=_HOSTNAME_KEY, string_value=os.uname()[1]),
-                KeyValue(key=_REPORTER_PLATFORM_KEY, string_value=_REPORTER_PLATFORM),
-                KeyValue(
-                    key=_REPORTER_PLATFORM_VERSION_KEY,
-                    string_value=platform.python_version(),
-                ),
-                KeyValue(key=_COMPONENT_KEY, string_value=self._component_name),
-                KeyValue(key=_SERVICE_VERSION_KEY, string_value=self._service_version),
-            ]
+        self._guid = util._generate_guid()
+        self._reporter = reporter.get_reporter(
+            self._service_name, self._service_version, self._guid
         )
         self._key_length = 30
         self._last_success = 0
         self._labels = [
-            KeyValue(key=_HOSTNAME_KEY, string_value=os.uname()[1]),
-            KeyValue(key=_COMPONENT_KEY, string_value=self._component_name),
-            KeyValue(key=_SERVICE_VERSION_KEY, string_value=self._service_version),
+            KeyValue(key=reporter.HOSTNAME_KEY, string_value=os.uname()[1]),
+            KeyValue(
+                key=reporter.SERVICE_NAME_KEY, string_value=self._service_name
+            ),
+            KeyValue(
+                key=reporter.SERVICE_VERSION_KEY,
+                string_value=self._service_version,
+            ),
         ]
 
     def _ingest_request(self):
         return IngestRequest(
-            reporter=self._reporter, idempotency_key=self._generate_idempotency_key()
+            reporter=self._reporter,
+            idempotency_key=self._generate_idempotency_key(),
         )
 
     def _generate_idempotency_key(self):
         return "".join(
-            random.choice(string.ascii_lowercase) for i in range(self._key_length)
+            random.choice(string.ascii_lowercase)
+            for i in range(self._key_length)
         )
 
     def _converted_labels(self, labels):
@@ -114,7 +111,9 @@ class LightstepMetricsExporter(MetricsExporter):
         # intentionally throw away first report
         return self._last_success == 0 or duration.ToSeconds() > _MAX_DURATION
 
-    def export(self, metric_records: Sequence[MetricRecord]) -> MetricsExportResult:
+    def export(
+        self, metric_records: Sequence[MetricRecord]
+    ) -> MetricsExportResult:
         """Exports a batch of telemetry data.
 
         Args:
