@@ -1,15 +1,15 @@
 import time
 import unittest
-
 from unittest import mock
 from unittest.mock import Mock
+
 from opentelemetry.ext.lightstep.metrics import LightstepMetricsExporter
 from opentelemetry.ext.lightstep.protobuf.metrics_pb2 import IngestRequest
 from opentelemetry.sdk import metrics
 from opentelemetry.sdk.metrics.export import (
+    MetricRecord,
     MetricsExporter,
     MetricsExportResult,
-    MetricRecord,
     Sequence,
 )
 from opentelemetry.sdk.metrics.export.aggregate import ObserverAggregator

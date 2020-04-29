@@ -1,20 +1,17 @@
 import unittest
-
-from unittest.mock import patch
 from test.support import EnvironmentVarGuard  # Python >=3
+from unittest.mock import patch
 
 import httpretty
-
 from opentelemetry import trace as trace_api
-from opentelemetry.sdk import trace
 from opentelemetry.ext.lightstep import (
-    LightstepSpanExporter,
     TRACING_URL_ENV_VAR,
+    LightstepSpanExporter,
 )
+from opentelemetry.ext.lightstep.protobuf.collector_pb2 import ReportRequest
+from opentelemetry.sdk import trace
 from opentelemetry.sdk.trace.export import SpanExportResult
 from opentelemetry.trace.status import Status, StatusCanonicalCode
-
-from opentelemetry.ext.lightstep.protobuf.collector_pb2 import ReportRequest
 
 
 class TestLightStepSpanExporter(unittest.TestCase):

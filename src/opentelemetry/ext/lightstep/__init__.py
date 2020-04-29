@@ -2,24 +2,21 @@ import math
 import os
 import typing
 
-from google.protobuf.timestamp_pb2 import Timestamp
 import requests
-
+from google.protobuf.timestamp_pb2 import Timestamp
 from opentelemetry import trace as trace_api
-from opentelemetry.ext.lightstep import reporter
+from opentelemetry.ext.lightstep import reporter, util
 from opentelemetry.ext.lightstep.api_client import APIClient
-from opentelemetry.sdk.trace import export as sdk
-
-from opentelemetry.ext.lightstep import util
 from opentelemetry.ext.lightstep.protobuf.collector_pb2 import (
     Auth,
-    ReportRequest,
-    Span,
     KeyValue,
     Reference,
+    ReportRequest,
+    Span,
     SpanContext,
 )
 from opentelemetry.ext.lightstep.version import __version__
+from opentelemetry.sdk.trace import export as sdk
 
 TRACING_URL_ENV_VAR = "LS_TRACING_URL"
 _DEFAULT_TRACING_URL = os.environ.get(

@@ -6,7 +6,6 @@ from opentelemetry.ext.lightstep import LightStepSpanExporter
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import BatchExportSpanProcessor
 
-
 # configure the LightStepSpanExporter as our exporter
 exporter = LightStepSpanExporter(
     name=os.getenv("LIGHTSTEP_SERVICE_NAME", "test-service-name"),

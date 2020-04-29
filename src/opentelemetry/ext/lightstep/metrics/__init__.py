@@ -3,17 +3,8 @@ import random
 import string
 
 import requests
-
 from google.protobuf.duration_pb2 import Duration
 from google.protobuf.timestamp_pb2 import Timestamp
-
-from opentelemetry.sdk.metrics.export import (
-    MetricsExporter,
-    MetricsExportResult,
-    MetricRecord,
-    Sequence,
-)
-
 from opentelemetry.ext.lightstep import reporter
 from opentelemetry.ext.lightstep.api_client import APIClient
 from opentelemetry.ext.lightstep.protobuf.collector_pb2 import KeyValue
@@ -21,6 +12,12 @@ from opentelemetry.ext.lightstep.protobuf.metrics_pb2 import (
     IngestRequest,
     MetricKind,
     MetricPoint,
+)
+from opentelemetry.sdk.metrics.export import (
+    MetricRecord,
+    MetricsExporter,
+    MetricsExportResult,
+    Sequence,
 )
 
 from .. import util
