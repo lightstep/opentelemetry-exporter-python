@@ -127,9 +127,6 @@ class LightstepSpanExporter(sdk.SpanExporter):
         report_request = ReportRequest(
             auth=self._auth, reporter=self._reporter, spans=span_records
         )
-        # from google.protobuf.json_format import MessageToJson
-
-        # print(MessageToJson(report_request))
 
         resp = self._client.send(report_request.SerializeToString())
         if resp.status_code == requests.codes["ok"]:
