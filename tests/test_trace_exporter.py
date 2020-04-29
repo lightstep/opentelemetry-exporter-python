@@ -1,13 +1,16 @@
 import unittest
 
 from unittest.mock import patch
+from test.support import EnvironmentVarGuard  # Python >=3
 
 import httpretty
 
 from opentelemetry import trace as trace_api
 from opentelemetry.sdk import trace
-import opentelemetry.ext.lightstep
-from opentelemetry.ext.lightstep import LightstepSpanExporter
+from opentelemetry.ext.lightstep import (
+    LightstepSpanExporter,
+    TRACING_URL_ENV_VAR,
+)
 from opentelemetry.sdk.trace.export import SpanExportResult
 from opentelemetry.trace.status import Status, StatusCanonicalCode
 
@@ -16,6 +19,8 @@ from opentelemetry.ext.lightstep.protobuf.collector_pb2 import ReportRequest
 
 class TestLightStepSpanExporter(unittest.TestCase):
     def setUp(self):
+        self.env = EnvironmentVarGuard()
+        self.env.unset(TRACING_URL_ENV_VAR)
         self._trace_id = 0x6E0C63257DE34C926F9EFCD03927272E
         self._exporter = LightstepSpanExporter(
             "my-service-name",

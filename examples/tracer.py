@@ -11,7 +11,7 @@ from opentelemetry.sdk.trace.export import BatchExportSpanProcessor
 exporter = LightStepSpanExporter(
     name=os.getenv("LIGHTSTEP_SERVICE_NAME", "test-service-name"),
     token=os.getenv("LIGHTSTEP_ACCESS_TOKEN", ""),
-    verbosity=5,
+    # verbosity=5,
     host="ingest.staging.lightstep.com",
     service_version=os.getenv("LIGHTSTEP_SERVICE_VERSION", "0.0.1"),
 )
