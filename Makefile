@@ -8,6 +8,7 @@ cover:
 lint:
 	pip install black
 	black .
+	flake8
 
 clean-dist:
 	rm -Rf ./dist

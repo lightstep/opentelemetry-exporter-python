@@ -19,7 +19,7 @@ def get_reporter(service_name, service_version, guid) -> Reporter:
         service_name: name of the service to instrument
         service_version: version of the service to instrument
         guid: used to identify the `Reporter`
-    
+
     Returns:
         a configured `Reporter`
     """

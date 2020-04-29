@@ -19,7 +19,7 @@ def ingest_request_from_data(data):
     ingest_request = IngestRequest()
     try:
         ingest_request.ParseFromString(data)
-    except:
+    except Exception:  # pylint: disable=broad-except
         pass
     return ingest_request
 

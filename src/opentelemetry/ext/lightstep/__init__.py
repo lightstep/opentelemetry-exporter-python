@@ -102,7 +102,7 @@ class LightstepSpanExporter(sdk.SpanExporter):
         if service_version is not None:
             tags["service.version"] = service_version
 
-    def export(self, spans: typing.Sequence[sdk.Span]) -> "SpanExportResult":
+    def export(self, spans: typing.Sequence[sdk.Span]) -> sdk.SpanExportResult:
         span_records = []
         for span in spans:
             span_record = self.create_span_record(span, self._guid)
