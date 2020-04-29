@@ -4,3 +4,5 @@ ignore =
   F401  # unused import, defer to pylint
   W503  # allow line breaks after binary ops, not after
   E203  # allow whitespace before ':' (https://github.com/psf/black#slices) 
+exclude =
+  src/opentelemetry/ext/lightstep/protobuf
