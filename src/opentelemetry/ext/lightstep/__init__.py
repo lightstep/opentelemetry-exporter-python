@@ -31,7 +31,7 @@ _NANOS_IN_MICROS = 1000
 
 def _set_kv_value(key_value: KeyValue, value: any) -> None:
     """Sets the correct value type for a KeyValue.
-    
+
     Args:
         key_value: the `KeyValue` to modify
         value: the value set
@@ -99,8 +99,10 @@ def _convert_span(span: sdk.Span) -> Span:
         duration_micros=int(_span_duration(span.start_time, span.end_time)),
     )
     if parent_id is not None:
-        reference = span_record.references.add()
-        reference.relationship = Reference.CHILD_OF
+        reference = span_record.references.add()  # pylint: disable=no-member
+        reference.relationship = (
+            Reference.CHILD_OF  # pylint: disable=no-member
+        )
         reference.span_context.span_id = parent_id
 
     return span_record
@@ -149,7 +151,7 @@ class LightstepSpanExporter(sdk.SpanExporter):
 
         url = os.environ.get(
             TRACING_URL_ENV_VAR,
-            "{}://{}:{}/api/v2/report".format(scheme, host, port)
+            "{}://{}:{}/api/v2/report".format(scheme, host, port),
         )
 
         self._auth = Auth()
@@ -183,7 +185,7 @@ class LightstepSpanExporter(sdk.SpanExporter):
             if span.attributes is not None:
                 attrs.update(span.attributes)
             for key, val in attrs.items():
-                key_value = span_record.tags.add()
+                key_value = span_record.tags.add()  # pylint: disable=no-member
                 key_value.key = key
                 _set_kv_value(key_value, val)
 
@@ -209,9 +211,10 @@ class LightstepSpanExporter(sdk.SpanExporter):
         """Not currently implemented."""
 
 
+# pylint: disable=invalid-name
 def LightStepSpanExporter(*args, **kwargs):
     """Backwards compatibility wrapper."""
-    import warnings
+    import warnings  # pylint: disable=import-outside-toplevel
 
     warnings.warn(
         "LightStepSpanExporter() is deprecated; use LightstepSpanExporter().",
