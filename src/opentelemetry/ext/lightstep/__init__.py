@@ -157,7 +157,6 @@ class LightstepSpanExporter(sdk.SpanExporter):
         )
 
         resp = self._client.send(report_request.SerializeToString())
-        print(resp)
         if resp.status_code == requests.codes["ok"]:
             return sdk.SpanExportResult.SUCCESS
         return sdk.SpanExportResult.FAILURE
@@ -179,5 +178,13 @@ class LightstepSpanExporter(sdk.SpanExporter):
                 _set_kv_value(field, val)
 
 
-class LightStepSpanExporter(LightstepSpanExporter):
-    """Backwards compatibility wrapper class"""
+def LightStepSpanExporter(*args, **kwargs):
+    """Backwards compatibility wrapper."""
+    import warnings
+
+    warnings.warn(
+        "LightStepSpanExporter() is deprecated; use LightstepSpanExporter().",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    return LightstepSpanExporter(*args, **kwargs)
