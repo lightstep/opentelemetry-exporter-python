@@ -27,7 +27,7 @@ def get_reporter(service_name, service_version, guid) -> Reporter:
     return Reporter(
         reporter_id=guid,
         tags=[
-            KeyValue(key=HOSTNAME_KEY, string_value=os.uname()[1]),
+            KeyValue(key=HOSTNAME_KEY, string_value=os.uname().nodename),
             KeyValue(
                 key="lightstep.reporter_platform",
                 string_value="otel-ls-python",
