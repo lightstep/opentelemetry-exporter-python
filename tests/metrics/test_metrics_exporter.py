@@ -48,7 +48,7 @@ class TestLightstepMetricsExporter(unittest.TestCase):
         args = {"status_code": 404}
         mock_post.return_value = Mock(**args)
         result = self.exporter.export(self.metrics)
-        self.assertEqual(result, MetricsExportResult.FAILURE)
+        self.assertEqual(result, MetricsExportResult.FAILED_NOT_RETRYABLE)
 
     @mock.patch("requests.post")
     def test_request_headers(self, mock_post):

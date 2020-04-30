@@ -59,6 +59,20 @@ class TestLightStepSpanExporter(unittest.TestCase):
             "https://ingest.lightstep.com:443/api/v2/report",
         )
 
+    def test_export_failed(self):
+        httpretty.disable()
+        httpretty.reset()
+        httpretty.enable()
+        httpretty.register_uri(
+            httpretty.POST, "https://localhost:443/api/v2/report", status=404,
+        )
+        self.assertEqual(
+            self._exporter.export(
+                [trace.Span("fail-test", trace.SpanContext(1, 2, False))]
+            ),
+            SpanExportResult.FAILED_NOT_RETRYABLE,
+        )
+
     def test_export(self):
         # pylint: disable=unused-argument
         span_names = ("test1", "test2", "test3")

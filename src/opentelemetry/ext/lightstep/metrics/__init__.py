@@ -159,7 +159,7 @@ class LightstepMetricsExporter(MetricsExporter):
         if resp.status_code == requests.codes["ok"]:
             self._last_success = start_time.ToSeconds()
             return MetricsExportResult.SUCCESS
-        return MetricsExportResult.FAILURE
+        return MetricsExportResult.FAILED_NOT_RETRYABLE
 
     def shutdown(self) -> None:
         """Shuts down the exporter.
