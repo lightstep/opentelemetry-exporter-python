@@ -103,26 +103,23 @@ def _append_log(span_record, attrs, timestamp):
 
 
 class LightstepSpanExporter(sdk.SpanExporter):
-    """Lightstep span exporter for OpenTelemetry.
-    """
+    """Lightstep span exporter for OpenTelemetry."""
 
     def __init__(
         self,
-        name,
-        token="",
-        host="ingest.lightstep.com",
-        port=443,
-        encryption="tls",
-        service_version=None,
+        name: str,
+        token: str = "",
+        host: str = "ingest.lightstep.com",
+        port: int = 443,
+        secure: bool = True,
+        service_version: typing.Optional[str] = None,
     ):
         tags = {
             "lightstep.tracer_platform": "otel-ls-python",
             "lightstep.tracer_platform_version": __version__,
         }
 
-        scheme = "https"
-        if encryption != "tls":
-            scheme = "http"
+        scheme = "https" if secure else "http"
 
         url = os.environ.get(
             TRACING_URL_ENV_VAR,
@@ -142,6 +139,14 @@ class LightstepSpanExporter(sdk.SpanExporter):
             tags["service.version"] = service_version
 
     def export(self, spans: typing.Sequence[sdk.Span]) -> sdk.SpanExportResult:
+        """Exports a batch of telemetry data.
+
+        Args:
+            spans: The list of `opentelemetry.trace.Span` objects to be exported
+
+        Returns:
+            The result of the export
+        """
         span_records = []
         for span in spans:
             span_record = _create_span_record(span)
@@ -175,7 +180,7 @@ class LightstepSpanExporter(sdk.SpanExporter):
         return sdk.SpanExportResult.FAILURE
 
     def shutdown(self) -> None:
-        """Not currently implemented"""
+        """Not currently implemented."""
 
 
 def LightStepSpanExporter(*args, **kwargs):
