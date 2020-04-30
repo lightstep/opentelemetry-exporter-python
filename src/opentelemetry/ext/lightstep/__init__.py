@@ -89,6 +89,19 @@ def _create_span_record(span: sdk.Span):
     return span_record
 
 
+def _append_log(span_record, attrs, timestamp):
+    if len(attrs) > 0:
+        seconds, nanos = _time_to_seconds_nanos(timestamp)
+
+        proto_log = span_record.logs.add()
+        proto_log.timestamp.seconds = seconds
+        proto_log.timestamp.nanos = nanos
+        for key, val in attrs.items():
+            field = proto_log.fields.add()
+            field.key = key
+            _set_kv_value(field, val)
+
+
 class LightstepSpanExporter(sdk.SpanExporter):
     """Lightstep span exporter for OpenTelemetry.
     """
@@ -145,7 +158,7 @@ class LightstepSpanExporter(sdk.SpanExporter):
 
             for event in span.events:
                 event.attributes["message"] = event.name
-                self.append_log(
+                _append_log(
                     span_record, event.attributes, event.timestamp,
                 )
 
@@ -162,20 +175,7 @@ class LightstepSpanExporter(sdk.SpanExporter):
         return sdk.SpanExportResult.FAILURE
 
     def shutdown(self) -> None:
-        """Flush remaining spans"""
-        # self.tracer.flush()
-
-    def append_log(self, span_record, attrs, timestamp):
-        if len(attrs) > 0:
-            seconds, nanos = _time_to_seconds_nanos(timestamp)
-
-            proto_log = span_record.logs.add()
-            proto_log.timestamp.seconds = seconds
-            proto_log.timestamp.nanos = nanos
-            for key, val in attrs.items():
-                field = proto_log.fields.add()
-                field.key = key
-                _set_kv_value(field, val)
+        """Not currently implemented"""
 
 
 def LightStepSpanExporter(*args, **kwargs):
