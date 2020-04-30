@@ -69,11 +69,11 @@ class TestLightStepSpanExporter(unittest.TestCase):
             base_time + 150 * 10 ** 6,
             base_time + 300 * 10 ** 6,
         )
-        durations = (50 * 10 ** 6, 100 * 10 ** 6, 200 * 10 ** 6)
+        durations = (50 * 10 ** 6, 100 * 10 ** 6, 0)
         end_times = (
             start_times[0] + durations[0],
             start_times[1] + durations[1],
-            start_times[2] + durations[2],
+            start_times[2] - 100 * 10 ** 6,
         )
 
         span_context = trace_api.SpanContext(
@@ -203,20 +203,6 @@ class TestLightStepSpanExporter(unittest.TestCase):
         self.assertEqual(
             log.timestamp.nanos, int(event_timestamp % 1000000000)
         )
-
-    def test_links(self):
-        """Test links are translated into references."""
-        # TODO
-
-    #     link_attributes = {"key_bool": True}
-
-    #     link = trace_api.Link(context=self._span_context, attributes=link_attributes)
-    #     otel_span = trace.Span(
-    #         name=__name__, context=self._span_context, links=(link,),
-    #     )
-    #     result_spans = self._process_spans([otel_span])
-    #     self.assertEqual(len(result_spans), 1)
-    #     self.assertEqual(len(result_spans[0].references), 1)
 
     def test_resources(self):
         """Test resources."""

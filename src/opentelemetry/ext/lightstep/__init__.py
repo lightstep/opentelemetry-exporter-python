@@ -70,6 +70,8 @@ def _span_duration(start: Union[int, None], end: Union[int, None]) -> int:
     """
     start = start or 0
     end = end or 0
+    if end < start:
+        return 0
     return math.floor(round((end - start) / 1000))
 
 
