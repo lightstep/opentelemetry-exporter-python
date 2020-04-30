@@ -124,10 +124,10 @@ class LightstepSpanExporter(sdk.SpanExporter):
         if encryption != "tls":
             scheme = "http"
 
-        if TRACING_URL_ENV_VAR in os.environ:
-            url = os.environ.get(TRACING_URL_ENV_VAR)
-        else:
-            url = "{}://{}:{}/api/v2/report".format(scheme, host, port)
+        url = os.environ.get(
+            TRACING_URL_ENV_VAR,
+            "{}://{}:{}/api/v2/report".format(scheme, host, port)
+        )
 
         self._auth = Auth()
         self._auth.access_token = token
