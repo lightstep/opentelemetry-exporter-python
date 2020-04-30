@@ -3,6 +3,7 @@ from unittest import mock
 from unittest.mock import Mock
 
 from opentelemetry.ext.lightstep.api_client import APIClient
+from opentelemetry.ext.lightstep.version import __version__
 
 
 class TestAPIClient(unittest.TestCase):
@@ -19,6 +20,7 @@ class TestAPIClient(unittest.TestCase):
         APIClient("123", "test.com").send("content")
 
         expected = {
+            "User-Agent": "otel-ls-python/{}".format(__version__),
             "Accept": "application/octet-stream",
             "Content-Type": "application/octet-stream",
             "Lightstep-Access-Token": "123",

@@ -62,15 +62,9 @@ class TestLightstepMetricsExporter(unittest.TestCase):
 
         mock_post.side_effect = side_effect
         self.exporter.export(self.metrics)
-        expected = {
-            "Accept": "application/octet-stream",
-            "Content-Type": "application/octet-stream",
-            "Lightstep-Access-Token": "invalid",
-        }
         mock_post.assert_called()
 
-        self.assertEqual(len(m.headers), len(expected))
-        self.assertEqual(m.headers, expected)
+        self.assertEqual(m.headers["Lightstep-Access-Token"], "invalid")
 
     @mock.patch("requests.post")
     def test_filters(self, mock_post):
