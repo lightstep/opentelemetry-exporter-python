@@ -1,6 +1,8 @@
 import backoff
 import requests
 
+from opentelemetry.ext.lightstep.version import __version__
+
 
 class APIClient:
     """HTTP client to send data to Lightstep"""
@@ -9,6 +11,7 @@ class APIClient:
         self, token, url,
     ):
         self._headers = {
+            "User-Agent": "otel-ls-python/{}".format(__version__),
             "Accept": "application/octet-stream",
             "Content-Type": "application/octet-stream",
             "Lightstep-Access-Token": token,
