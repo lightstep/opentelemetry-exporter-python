@@ -1,6 +1,7 @@
 import math
 import os
 import typing
+from typing import Dict, Union
 
 import requests
 from google.protobuf.timestamp_pb2 import Timestamp
@@ -28,7 +29,13 @@ _NANOS_IN_SECONDS = 1000000000
 _NANOS_IN_MICROS = 1000
 
 
-def _set_kv_value(key_value, value):
+def _set_kv_value(key_value: KeyValue, value: any) -> None:
+    """Sets the correct value type for a KeyValue.
+    
+    Args:
+        key_value: the `KeyValue` to modify
+        value: the value set
+    """
     if isinstance(value, bool):
         key_value.bool_value = value
     elif isinstance(value, int):
@@ -36,33 +43,43 @@ def _set_kv_value(key_value, value):
     elif isinstance(value, float):
         key_value.double_value = value
     else:
-        key_value.string_value = value
+        key_value.string_value = str(value)
 
 
-def _nsec_to_sec(nsec=0):
-    """Convert nanoseconds to seconds float."""
-    nsec = nsec or 0
-    return nsec / _NANOS_IN_SECONDS
-
-
-def _time_to_seconds_nanos(nsec):
+def _time_to_seconds_nanos(
+    nsec: typing.Union[int, None]
+) -> typing.Tuple[int, int]:
     """Convert time from nanos to a tuple containing
     seconds and nanoseconds.
     """
     nsec = nsec or 0
-    seconds = int(_nsec_to_sec(nsec))
+    seconds = int(nsec / _NANOS_IN_SECONDS)
     nanos = int(nsec % _NANOS_IN_SECONDS)
     return (seconds, nanos)
 
 
-def _span_duration(start, end):
-    """Convert a time.time()-style timestamp to microseconds."""
+def _span_duration(start: Union[int, None], end: Union[int, None]) -> int:
+    """Calculate span duration in microseconds.
+
+    Args:
+        start: start time in ns
+        end: end time in ns
+
+    Returns:
+        Duration in microseconds.
+    """
     start = start or 0
     end = end or 0
     return math.floor(round((end - start) / 1000))
 
 
-def _create_span_record(span: sdk.Span):
+def _convert_span(span: sdk.Span) -> Span:
+    """Translate an OpenTelemetry span into a Lightstep Span.
+    Args:
+        span: OpenTelemetry Span to translate
+    Returns:
+        Lightstep span.
+    """
     span_context = SpanContext(
         trace_id=0xFFFFFFFFFFFFFFFF & span.context.trace_id,
         span_id=0xFFFFFFFFFFFFFFFF & span.context.span_id,
@@ -89,7 +106,16 @@ def _create_span_record(span: sdk.Span):
     return span_record
 
 
-def _append_log(span_record, attrs, timestamp):
+def _append_log(
+    span_record: Span, attrs: Dict, timestamp: Union[int, None]
+) -> None:
+    """Appends a log to span by converting an OpenTelemetry event to a log.
+
+    Args:
+        span_record: span to append the log to
+        attrs: the attributes to append as fields to the log
+        timestamp: time associated with the event
+    """
     if len(attrs) > 0:
         seconds, nanos = _time_to_seconds_nanos(timestamp)
 
@@ -149,7 +175,7 @@ class LightstepSpanExporter(sdk.SpanExporter):
         """
         span_records = []
         for span in spans:
-            span_record = _create_span_record(span)
+            span_record = _convert_span(span)
             span_records.append(span_record)
             attrs = {}
             if span.resource is not None:
