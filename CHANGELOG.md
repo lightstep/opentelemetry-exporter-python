@@ -8,6 +8,7 @@ v0.6b3
 * Adding LightstepMetricsExporter
 * Refactor LightStepSpanExporter to remove dependency on lightstep-tracer client
 * Deprecating LightStepSpanExporter in favour of LightstepSpanExporter
+* OpenTelemetry SpanKind now being reported
 
 v0.6b2
 ======
