@@ -5,6 +5,7 @@ from typing import Dict, Union
 
 import requests
 from google.protobuf.timestamp_pb2 import Timestamp
+
 from opentelemetry import trace as trace_api
 from opentelemetry.ext.lightstep import reporter, util
 from opentelemetry.ext.lightstep.api_client import APIClient

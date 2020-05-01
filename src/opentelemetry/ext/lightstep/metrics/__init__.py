@@ -5,6 +5,7 @@ import string
 import requests
 from google.protobuf.duration_pb2 import Duration
 from google.protobuf.timestamp_pb2 import Timestamp
+
 from opentelemetry.ext.lightstep import reporter
 from opentelemetry.ext.lightstep.api_client import APIClient
 from opentelemetry.ext.lightstep.protobuf.collector_pb2 import KeyValue

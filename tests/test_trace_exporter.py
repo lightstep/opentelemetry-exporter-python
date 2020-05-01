@@ -3,6 +3,7 @@ from test.support import EnvironmentVarGuard  # Python >=3
 from unittest.mock import patch
 
 import httpretty
+
 from opentelemetry import trace as trace_api
 from opentelemetry.ext.lightstep import (
     TRACING_URL_ENV_VAR,
