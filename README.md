@@ -16,7 +16,7 @@ from opentelemetry import trace
 from opentelemetry.ext.lightstep import LightStepSpanExporter
 from opentelemetry.sdk.trace.export import BatchExportSpanProcessor
 
-exporter = LightStepSpanExporter(
+exporter = LightstepSpanExporter(
     name="test-service",
     token=<PROJECT_ACCESS_TOKEN>,
     host=<SATELLITE_URL>,
