@@ -6,3 +6,4 @@ ignore =
   E203  # allow whitespace before ':' (https://github.com/psf/black#slices) 
 exclude =
   src/opentelemetry/ext/lightstep/protobuf
+  build/lib/opentelemetry/ext/lightstep/protobuf

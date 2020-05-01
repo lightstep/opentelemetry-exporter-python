@@ -3,6 +3,7 @@ from test.support import EnvironmentVarGuard  # Python >=3
 from unittest.mock import patch
 
 import httpretty
+
 from opentelemetry import trace as trace_api
 from opentelemetry.ext.lightstep import (
     TRACING_URL_ENV_VAR,
@@ -149,6 +150,15 @@ class TestLightStepSpanExporter(unittest.TestCase):
         )
         self.assertEqual(len(result_spans[1].references), 0)
 
+        # ensure tag is set for kind
+        self.assertEqual(len(result_spans[0].tags), 1)
+        for tag in result_spans[0].tags:
+            if tag.key == "span.kind":
+                self.assertEqual(tag.string_value, "client")
+        for tag in result_spans[1].tags:
+            if tag.key == "span.kind":
+                self.assertEqual(tag.string_value, "internal")
+
     def test_span_attributes(self):
         """Ensure span attributes are passed as tags."""
         otel_span = trace.Span(name=__name__, context=self._span_context)
@@ -159,7 +169,7 @@ class TestLightStepSpanExporter(unittest.TestCase):
         result_spans = self._process_spans([otel_span])
 
         self.assertEqual(len(result_spans), 1)
-        self.assertEqual(len(result_spans[0].tags), 4)
+        self.assertEqual(len(result_spans[0].tags), 5)
 
         for tag in result_spans[0].tags:
             if tag.key == "key_bool":
@@ -170,6 +180,8 @@ class TestLightStepSpanExporter(unittest.TestCase):
                 self.assertEqual(tag.double_value, 111.22)
             elif tag.key == "key_int":
                 self.assertEqual(tag.int_value, 99)
+            elif tag.key == "span.kind":
+                self.assertEqual(tag.string_value, "internal")
             else:
                 raise Exception("unexpected value in tags")
 
@@ -237,5 +249,7 @@ class TestLightStepSpanExporter(unittest.TestCase):
                 self.assertEqual(tag.string_value, "456")
             elif tag.key == "one-more":
                 self.assertEqual(tag.string_value, "000")
+            elif tag.key == "span.kind":
+                self.assertEqual(tag.string_value, "internal")
             else:
                 raise Exception("unexpected value in tags")
