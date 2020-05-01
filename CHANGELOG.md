@@ -1,5 +1,14 @@
 ## Unreleased
 
+v0.6b3
+======
+
+### Changes
+
+* Adding LightstepMetricsExporter
+* Refactor LightStepSpanExporter to remove dependency on lightstep-tracer client
+* Deprecating LightStepSpanExporter in favour of LightstepSpanExporter
+
 v0.6b2
 ======
 

@@ -1,63 +1,79 @@
 import unittest
-
+from test.support import EnvironmentVarGuard  # Python >=3
 from unittest.mock import patch
 
+import httpretty
 from opentelemetry import trace as trace_api
+from opentelemetry.ext.lightstep import (
+    TRACING_URL_ENV_VAR,
+    LightstepSpanExporter,
+)
+from opentelemetry.ext.lightstep.protobuf.collector_pb2 import ReportRequest
 from opentelemetry.sdk import trace
-import opentelemetry.ext.lightstep
-from opentelemetry.ext.lightstep import LightStepSpanExporter
 from opentelemetry.sdk.trace.export import SpanExportResult
 from opentelemetry.trace.status import Status, StatusCanonicalCode
 
 
 class TestLightStepSpanExporter(unittest.TestCase):
     def setUp(self):
+        self.env = EnvironmentVarGuard()
+        self.env.unset(TRACING_URL_ENV_VAR)
         self._trace_id = 0x6E0C63257DE34C926F9EFCD03927272E
-        self._exporter = LightStepSpanExporter(
-            "my-service-name", service_version="1.2.3"
+        self._exporter = LightstepSpanExporter(
+            "my-service-name",
+            service_version="1.2.3",
+            host="localhost",
+            port="443",
         )
         self._exporter.tracer = unittest.mock.Mock()
         self._span_context = trace_api.SpanContext(
             self._trace_id, 0x2222222222222222, is_remote=False
         )
+        httpretty.enable()
+        httpretty.register_uri(
+            httpretty.POST, "https://localhost:443/api/v2/report",
+        )
+
+    def tearDown(self):
+        httpretty.disable()
+        httpretty.reset()
 
     def _process_spans(self, otel_spans):
-        result_spans = []
+        self.assertEqual(
+            self._exporter.export(otel_spans), SpanExportResult.SUCCESS
+        )
+        self.assertEqual(len(httpretty.latest_requests()), 1)
 
-        with patch.object(
-            self._exporter.tracer,
-            "record",
-            side_effect=lambda x: result_spans.append(x),
-        ):
-            self.assertEqual(
-                self._exporter.export(otel_spans), SpanExportResult.SUCCESS
-            )
+        report_request = ReportRequest()
+        report_request.ParseFromString(httpretty.last_request().body)
 
-        return result_spans
+        return report_request.spans
 
-    @patch("lightstep.Tracer")
-    def test_constructor_default(self, mock_tracer):
+    def test_constructor_default(self):
         # pylint: disable=unused-argument
         """Test the default values assigned by constructor."""
         name = "my-service-name"
-        LightStepSpanExporter(name)
-        mock_tracer.assert_called_once_with(
-            component_name=name,
-            access_token="",
-            collector_host="ingest.lightstep.com",
-            collector_port=443,
-            collector_encryption="tls",
-            verbosity=0,
-            use_http=False,
-            use_thrift=True,
-            tags={
-                "lightstep.tracer_platform": "otel-ls-python",
-                "lightstep.tracer_platform_version": opentelemetry.ext.lightstep.__version__,
-            },
+        exporter = LightstepSpanExporter(name)
+        self.assertEqual(
+            exporter._client._url,
+            "https://ingest.lightstep.com:443/api/v2/report",
         )
 
-    @patch("lightstep.Tracer")
-    def test_export(self, mock_tracer):
+    def test_export_failed(self):
+        httpretty.disable()
+        httpretty.reset()
+        httpretty.enable()
+        httpretty.register_uri(
+            httpretty.POST, "https://localhost:443/api/v2/report", status=404,
+        )
+        self.assertEqual(
+            self._exporter.export(
+                [trace.Span("fail-test", trace.SpanContext(1, 2, False))]
+            ),
+            SpanExportResult.FAILED_NOT_RETRYABLE,
+        )
+
+    def test_export(self):
         # pylint: disable=unused-argument
         span_names = ("test1", "test2", "test3")
 
@@ -67,11 +83,11 @@ class TestLightStepSpanExporter(unittest.TestCase):
             base_time + 150 * 10 ** 6,
             base_time + 300 * 10 ** 6,
         )
-        durations = (50 * 10 ** 6, 100 * 10 ** 6, 200 * 10 ** 6)
+        durations = (50 * 10 ** 6, 100 * 10 ** 6, 0)
         end_times = (
             start_times[0] + durations[0],
             start_times[1] + durations[1],
-            start_times[2] + durations[2],
+            start_times[2] - 100 * 10 ** 6,
         )
 
         span_context = trace_api.SpanContext(
@@ -91,7 +107,9 @@ class TestLightStepSpanExporter(unittest.TestCase):
                 parent=parent_context,
                 kind=trace_api.SpanKind.CLIENT,
             ),
-            trace.Span(name=span_names[1], context=parent_context, parent=None),
+            trace.Span(
+                name=span_names[1], context=parent_context, parent=None
+            ),
             trace.Span(name=span_names[2], context=other_context, parent=None),
         ]
 
@@ -111,46 +129,65 @@ class TestLightStepSpanExporter(unittest.TestCase):
         result_spans = self._process_spans(otel_spans)
         self.assertEqual(len(result_spans), len(otel_spans))
         for index, _ in enumerate(span_names):
-            self.assertEqual(result_spans[index].operation_name, span_names[index])
             self.assertEqual(
-                result_spans[index].start_time, start_times[index] / 1000000000
+                result_spans[index].operation_name, span_names[index]
             )
             self.assertEqual(
-                round(result_spans[index].duration, 2), durations[index] / 1000000000,
+                result_spans[index].start_timestamp.seconds,
+                int(start_times[index] / 1000000000),
+            )
+            self.assertEqual(
+                result_spans[index].duration_micros,
+                int(durations[index] / 1000),
             )
 
         # test parent hierarchy
-        self.assertIsNotNone(result_spans[0].parent_id)
-        self.assertEqual(result_spans[0].parent_id, result_spans[1].context.span_id)
-        self.assertIsNone(result_spans[1].parent_id)
+        self.assertEqual(len(result_spans[0].references), 1)
+        self.assertEqual(
+            result_spans[0].references[0].span_context.span_id,
+            result_spans[1].span_context.span_id,
+        )
+        self.assertEqual(len(result_spans[1].references), 0)
 
-    @patch("lightstep.Tracer")
-    def test_span_attributes(self, mock_tracer):
-        """ ensure span attributes are passed as tags """
+    def test_span_attributes(self):
+        """Ensure span attributes are passed as tags."""
         otel_span = trace.Span(name=__name__, context=self._span_context)
         otel_span.set_attribute("key_bool", False)
         otel_span.set_attribute("key_string", "hello_world")
         otel_span.set_attribute("key_float", 111.22)
+        otel_span.set_attribute("key_int", 99)
         result_spans = self._process_spans([otel_span])
-        self.assertEqual(len(result_spans), 1)
-        self.assertEqual(len(result_spans[0].tags), 3)
-        self.assertFalse(result_spans[0].tags.get("key_bool"))
-        self.assertEqual(result_spans[0].tags.get("key_string"), "hello_world")
-        self.assertEqual(result_spans[0].tags.get("key_float"), 111.22)
 
-    @patch("lightstep.Tracer")
-    def test_events(self, mock_tracer):
-        """ test events are translated into logs """
+        self.assertEqual(len(result_spans), 1)
+        self.assertEqual(len(result_spans[0].tags), 4)
+
+        for tag in result_spans[0].tags:
+            if tag.key == "key_bool":
+                self.assertFalse(tag.bool_value)
+            elif tag.key == "key_string":
+                self.assertEqual(tag.string_value, "hello_world")
+            elif tag.key == "key_float":
+                self.assertEqual(tag.double_value, 111.22)
+            elif tag.key == "key_int":
+                self.assertEqual(tag.int_value, 99)
+            else:
+                raise Exception("unexpected value in tags")
+
+    def test_events(self):
+        """Test events are translated into logs."""
         base_time = 683647322 * 10 ** 9  # in ns
         event_attributes = {
             "annotation_bool": True,
             "annotation_string": "annotation_test",
-            "key_float": 0.3,
+            "annotation_float": 0.3,
+            "annotation_int": 77,
         }
 
         event_timestamp = base_time + 50 * 10 ** 6
         event = trace.Event(
-            name="event0", timestamp=event_timestamp, attributes=event_attributes,
+            name="event0",
+            timestamp=event_timestamp,
+            attributes=event_attributes,
         )
         otel_span = trace.Span(
             name=__name__, context=self._span_context, events=(event,),
@@ -159,36 +196,46 @@ class TestLightStepSpanExporter(unittest.TestCase):
         self.assertEqual(len(result_spans), 1)
         self.assertEqual(len(result_spans[0].logs), 1)
         log = result_spans[0].logs[0]
-        # timestamp is in seconds, event_timestamp in ns
-        self.assertEqual(log.timestamp, (event_timestamp / 1000000000))
-        self.assertEqual(log.key_values, event_attributes)
+        self.assertEqual(
+            log.timestamp.seconds, int(event_timestamp / 1000000000)
+        )
+        self.assertEqual(len(log.fields), 5)
+        for tag in log.fields:
+            if tag.key == "annotation_bool":
+                self.assertTrue(tag.bool_value)
+            elif tag.key == "annotation_string":
+                self.assertEqual(tag.string_value, "annotation_test")
+            elif tag.key == "annotation_float":
+                self.assertEqual(tag.double_value, 0.3)
+            elif tag.key == "annotation_int":
+                self.assertEqual(tag.int_value, 77)
+            elif tag.key == "message":
+                self.assertEqual(tag.string_value, "event0")
+            else:
+                raise Exception("unexpected value in fields")
 
-    @patch("lightstep.Tracer")
-    def test_links(self, mock_tracer):
-        """ test links are translated into references """
-        # TODO
+        self.assertEqual(
+            log.timestamp.nanos, int(event_timestamp % 1000000000)
+        )
 
-    #     link_attributes = {"key_bool": True}
-
-    #     link = trace_api.Link(context=self._span_context, attributes=link_attributes)
-    #     otel_span = trace.Span(
-    #         name=__name__, context=self._span_context, links=(link,),
-    #     )
-    #     result_spans = self._process_spans([otel_span])
-    #     self.assertEqual(len(result_spans), 1)
-    #     self.assertEqual(len(result_spans[0].references), 1)
-
-    @patch("lightstep.Tracer")
-    def test_resources(self, mock_tracer):
-        """ test resources """
+    def test_resources(self):
+        """Test resources."""
         resource = trace.Resource(labels={"test": "123", "other": "456"})
         otel_span = trace.Span(
             name=__name__, context=self._span_context, resource=resource,
         )
+
         otel_span.set_attribute("test", "789")
         otel_span.set_attribute("one-more", "000")
         result_spans = self._process_spans([otel_span])
+
         self.assertEqual(len(result_spans), 1)
-        self.assertEqual(result_spans[0].tags["test"], "789")
-        self.assertEqual(result_spans[0].tags["other"], "456")
-        self.assertEqual(result_spans[0].tags["one-more"], "000")
+        for tag in result_spans[0].tags:
+            if tag.key == "test":
+                self.assertEqual(tag.string_value, "789")
+            elif tag.key == "other":
+                self.assertEqual(tag.string_value, "456")
+            elif tag.key == "one-more":
+                self.assertEqual(tag.string_value, "000")
+            else:
+                raise Exception("unexpected value in tags")
