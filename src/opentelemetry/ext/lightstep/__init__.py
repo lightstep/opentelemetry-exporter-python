@@ -29,6 +29,15 @@ _NANOS_IN_SECONDS = 1000000000
 _NANOS_IN_MICROS = 1000
 
 
+_SPAN_KIND_LIST = [
+    "internal",
+    "server",
+    "client",
+    "producer",
+    "consumer",
+]
+
+
 def _set_kv_value(key_value: KeyValue, value: any) -> None:
     """Sets the correct value type for a KeyValue.
 
@@ -99,6 +108,9 @@ def _convert_span(span: sdk.Span) -> Span:
         operation_name=span.name,
         start_timestamp=Timestamp(seconds=seconds, nanos=nanos),
         duration_micros=int(_span_duration(span.start_time, span.end_time)),
+    )
+    span_record.tags.add(
+        key="span.kind", string_value=_SPAN_KIND_LIST[span.kind.value]
     )
     if parent_id is not None:
         reference = span_record.references.add()  # pylint: disable=no-member
