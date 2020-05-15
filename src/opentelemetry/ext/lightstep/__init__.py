@@ -220,7 +220,7 @@ class LightstepSpanExporter(sdk.SpanExporter):
         resp = self._client.send(report_request.SerializeToString())
         if resp.status_code == requests.codes["ok"]:
             return sdk.SpanExportResult.SUCCESS
-        return sdk.SpanExportResult.FAILED_NOT_RETRYABLE
+        return sdk.SpanExportResult.FAILURE
 
     def shutdown(self) -> None:
         """Not currently implemented."""

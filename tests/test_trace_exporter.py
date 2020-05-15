@@ -71,7 +71,7 @@ class TestLightStepSpanExporter(unittest.TestCase):
             self._exporter.export(
                 [trace.Span("fail-test", trace.SpanContext(1, 2, False))]
             ),
-            SpanExportResult.FAILED_NOT_RETRYABLE,
+            SpanExportResult.FAILURE,
         )
 
     def test_export(self):

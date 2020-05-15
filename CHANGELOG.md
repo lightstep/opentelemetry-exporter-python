@@ -1,5 +1,12 @@
 ## Unreleased
 
+v0.7b0
+======
+
+### Changes
+
+* Upgrading supported OpenTelemetry API/SDK version to 0.7b1
+
 v0.6b3
 ======
 

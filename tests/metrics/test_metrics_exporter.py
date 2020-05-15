@@ -44,11 +44,11 @@ class TestLightstepMetricsExporter(unittest.TestCase):
         self.metrics = [get_metric("mem.available", "memory available")]
 
     @mock.patch("requests.post")
-    def test_export_failed_not_retryable(self, mock_post):
+    def test_export_failed(self, mock_post):
         args = {"status_code": 404}
         mock_post.return_value = Mock(**args)
         result = self.exporter.export(self.metrics)
-        self.assertEqual(result, MetricsExportResult.FAILED_NOT_RETRYABLE)
+        self.assertEqual(result, MetricsExportResult.FAILURE)
 
     @mock.patch("requests.post")
     def test_request_headers(self, mock_post):
