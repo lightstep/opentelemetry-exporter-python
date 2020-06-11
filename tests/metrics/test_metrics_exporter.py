@@ -12,7 +12,7 @@ from opentelemetry.sdk.metrics.export import (
     MetricsExportResult,
     Sequence,
 )
-from opentelemetry.sdk.metrics.export.aggregate import ObserverAggregator
+from opentelemetry.sdk.metrics.export.aggregate import ValueObserverAggregator
 
 
 def ingest_request_from_data(data):
@@ -27,12 +27,12 @@ def ingest_request_from_data(data):
 def get_metric(name="name", desc="description"):
     meter = metrics.MeterProvider().get_meter(__name__)
     labels = (("host", "myhost"),)
-    aggregator = ObserverAggregator()
+    aggregator = ValueObserverAggregator()
     counter = metrics.Counter(
         name, desc, "bytes", int, meter, ("environment",),
     )
 
-    return MetricRecord(aggregator, labels, counter)
+    return MetricRecord(counter, labels, aggregator)
 
 
 class TestLightstepMetricsExporter(unittest.TestCase):

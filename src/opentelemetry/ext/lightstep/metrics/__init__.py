@@ -130,13 +130,14 @@ class LightstepMetricsExporter(MetricsExporter):
         duration.FromSeconds(start_time.ToSeconds() - self._last_success)
 
         for record in metric_records:
-            if record.metric.name not in self._filters.keys():
+            if record.instrument.name not in self._filters.keys():
                 continue
             value = 0.0
             if record.aggregator.checkpoint.last is not None:
                 value = float(
                     self._calc_value(
-                        record.metric.name, record.aggregator.checkpoint.last
+                        record.instrument.name,
+                        record.aggregator.checkpoint.last,
                     )
                 )
 
@@ -144,9 +145,9 @@ class LightstepMetricsExporter(MetricsExporter):
                 duration=duration,
                 start=start_time,
                 labels=self._converted_labels(record.labels) + self._labels,
-                metric_name=record.metric.name,
+                metric_name=record.instrument.name,
                 double_value=value,
-                kind=self._filters.get(record.metric.name),
+                kind=self._filters.get(record.instrument.name),
             )
 
         if len(ingest_request.points) == 0:
